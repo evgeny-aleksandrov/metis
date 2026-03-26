@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Data Fetch",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}/scripts/fetch-twelvedata.ps1",
+      "args": [
+        "-Symbol",
+        "SPY",
+        "-OutputPath",
+        "data/SPY.csv"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Backtester",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/spy_dip_backtester.exe",
+      "args": [
+        "--csv",
+        "data/SPY.csv",
+        "--output",
+        "ui/public/latest.json",
+        "--initial",
+        "10000",
+        "--x-min",
+        "0.01",
+        "--x-max",
+        "0.10",
+        "--x-step",
+        "0.01",
+        "--y-min",
+        "3",
+        "--y-max",
+        "20",
+        "--y-step",
+        "1",
+        "--hold-days",
+        "10"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "preLaunchTask": "Compile Backtester",
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Strawberry/c/bin/gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 param(
   [string]$CsvPath = "data/SPY.csv",
   [string]$OutputPath = "ui/public/latest.json",
+  [switch]$FetchOnline,
+  [string]$Symbol = "SPY",
+  [string]$ApiKey = $env:TWELVE_DATA_API_KEY,
+  [int]$YearsBack = 1,
   [double]$XMin = 0.01,
   [double]$XMax = 0.10,
   [double]$XStep = 0.01,
@@ -13,6 +17,15 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if ($FetchOnline) {
+  $scriptPath = Join-Path $PSScriptRoot "fetch-twelvedata.ps1"
+  & $scriptPath `
+    -Symbol $Symbol `
+    -OutputPath $CsvPath `
+    -ApiKey $ApiKey `
+    -YearsBack $YearsBack
+}
 
 $exePath = "build/Release/spy_dip_backtester.exe"
 if (-not (Test-Path $exePath)) {
