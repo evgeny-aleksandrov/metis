@@ -27,7 +27,7 @@
         "--initial",
         "10000",
         "--x-min",
-        "0.01",
+        "-0.10",
         "--x-max",
         "0.10",
         "--x-step",
@@ -38,8 +38,12 @@
         "20",
         "--y-step",
         "1",
-        "--hold-days",
-        "10"
+        "--hold-min",
+        "5",
+        "--hold-max",
+        "60",
+        "--hold-step",
+        "5"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",

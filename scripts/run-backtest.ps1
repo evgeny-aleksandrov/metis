@@ -11,7 +11,9 @@ param(
   [int]$YMin = 3,
   [int]$YMax = 20,
   [int]$YStep = 1,
-  [int]$HoldDays = 10,
+  [int]$HoldMin = 10,
+  [int]$HoldMax = 60,
+  [int]$HoldStep = 5,
   [double]$InitialEquity = 10000
 )
 
@@ -46,4 +48,6 @@ if (-not (Test-Path $exePath)) {
   --y-min $YMin `
   --y-max $YMax `
   --y-step $YStep `
-  --hold-days $HoldDays
+  --hold-min $HoldMin `
+  --hold-max $HoldMax `
+  --hold-step $HoldStep

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type ResultRow = {
-  dip_pct: number;
+  diff_pct: number;
   lookback_days: number;
   hold_days: number;
   final_equity: number;
@@ -18,7 +18,11 @@ type BacktestPayload = {
   generated_at: string;
   bars: number;
   initial_equity: number;
-  hold_days: number;
+  hold_days: {
+    min: number;
+    max: number;
+    step: number;
+  };
   best: ResultRow;
   results: ResultRow[];
 };
@@ -73,8 +77,8 @@ function App() {
   return (
     <main className="page">
       <header className="hero">
-        <h1>SPY Dip Strategy Explorer</h1>
-        <p>Buy when SPY drops by X% over Y days, then hold for a fixed window.</p>
+        <h1>SPY Diff Strategy Explorer</h1>
+        <p>Buy when SPY moves by at least X% over Y days, then hold for a fixed window.</p>
       </header>
 
       {loading && <p className="status">Loading backtest output...</p>}
@@ -92,9 +96,10 @@ function App() {
             <article className="card">
               <h2>Best Parameters</h2>
               <p><strong>Symbol:</strong> {data.symbol}</p>
-              <p><strong>X dip:</strong> {percent(data.best.dip_pct)}</p>
+              <p><strong>X diff:</strong> {percent(data.best.diff_pct)}</p>
               <p><strong>Y lookback:</strong> {data.best.lookback_days} days</p>
               <p><strong>Hold:</strong> {data.best.hold_days} days</p>
+              <p><strong>Hold sweep:</strong> {data.hold_days.min} to {data.hold_days.max} days, step {data.hold_days.step}</p>
             </article>
 
             <article className="card">
@@ -114,8 +119,9 @@ function App() {
             <table>
               <thead>
                 <tr>
-                  <th>X Dip</th>
+                  <th>X Diff</th>
                   <th>Y Days</th>
+                  <th>Hold Days</th>
                   <th>Final Equity</th>
                   <th>CAGR</th>
                   <th>Max DD</th>
@@ -124,9 +130,10 @@ function App() {
               </thead>
               <tbody>
                 {topTen.map((row) => (
-                  <tr key={`${row.dip_pct}-${row.lookback_days}`}>
-                    <td>{percent(row.dip_pct)}</td>
+                  <tr key={`${row.diff_pct}-${row.lookback_days}-${row.hold_days}`}>
+                    <td>{percent(row.diff_pct)}</td>
                     <td>{row.lookback_days}</td>
+                    <td>{row.hold_days}</td>
                     <td>{money(row.final_equity)}</td>
                     <td>{percent(row.cagr)}</td>
                     <td>{percent(row.max_drawdown)}</td>
@@ -146,4 +153,3 @@ function App() {
 }
 
 export default App;
-

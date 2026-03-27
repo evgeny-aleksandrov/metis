@@ -12,7 +12,7 @@ struct Candle {
 
 // Strategy knobs (input parameters for one simulation run).
 struct StrategyParams {
-  double dip_pct = 0.03;
+  double diff_pct = -0.03;
   int lookback_days = 5;
   int hold_days = 10;
 };
@@ -36,13 +36,15 @@ struct SimulationResult {
 
 // Grid-search ranges. Think nested loops over x and y.
 struct GridSearchConfig {
-  double x_min = 0.01;
+  double x_min = -0.10;
   double x_max = 0.10;
   double x_step = 0.01;
-  int y_min = 3;
+  int y_min = 2;
   int y_max = 20;
   int y_step = 1;
-  int hold_days = 10;
+  int hold_days_min = 10;
+  int hold_days_max = 60;
+  int hold_days_step = 5;
 };
 
 // Reads CSV -> vector of Candle rows.

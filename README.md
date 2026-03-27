@@ -1,13 +1,13 @@
 # SPY Dip Trading Starter (C++ + React)
 
 This project has:
-- A **C++ backtesting engine** that tests: buy SPY when it drops by `X%` over `Y` days
+- A **C++ backtesting engine** that tests: buy SPY when it changes by `X%` over `Y` days and hold for `hold` days
 - A **TypeScript + React UI** that shows the best parameter combo and top results
 
 ## Project layout
 - `backend/cpp`: C++ source for backtester + optimizer
 - `ui`: React app (Vite) that reads `ui/public/latest.json`
-- `data`: place your `SPY.csv` historical data here
+- `data`: sourced from Twelve Data
 - `scripts`: PowerShell helpers for build/run
 
 ## Prerequisites
@@ -127,32 +127,7 @@ Then:
 
 This lets you debug the API request, response handling, and CSV generation separately from the C++ app.
 
-### Run the debug binary manually
-
-If you want to run the debug build without VS Code:
-
-```powershell
-.\build\spy_dip_backtester.exe `
-  --csv data/SPY.csv `
-  --output ui/public/latest.json `
-  --initial 10000 `
-  --x-min 0.01 `
-  --x-max 0.10 `
-  --x-step 0.01 `
-  --y-min 3 `
-  --y-max 20 `
-  --y-step 1 `
-  --hold-days 10
-```
-
 ## What the strategy currently does
-- Entry: if SPY is down at least `X%` versus `Y` trading days ago, buy with all cash.
-- Exit: hold the position for a fixed number of days (`hold_days`, default 10), then sell.
-- Optimizer: brute-force grid search over `(X, Y)` and picks the best by CAGR.
-
-## Next upgrades you can add
-- Transaction costs and slippage
-- Position sizing rules
-- Stop-loss / take-profit logic
-- Walk-forward and out-of-sample testing
-- Multiple symbols and more indicators
+- Entry: if SPY has moved by at least `X%` versus `Y` trading days ago, buy with all cash.
+- Exit: hold the position certain number of days (`hold_days`), then sell.
+- Optimizer: brute-force grid search over `(X, Y, hold_days)` and picks the best by CAGR.

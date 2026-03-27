@@ -30,13 +30,15 @@ void print_help() {
   std::cout << "  --csv <path>          CSV file with Date + Close/Adj Close columns\n";
   std::cout << "  --output <path>       JSON output path (default: ui/public/latest.json)\n";
   std::cout << "  --initial <amount>    Starting cash (default: 10000)\n";
-  std::cout << "  --x-min <value>       Min dip percent decimal (default: 0.01)\n";
-  std::cout << "  --x-max <value>       Max dip percent decimal (default: 0.10)\n";
-  std::cout << "  --x-step <value>      Dip sweep step (default: 0.01)\n";
-  std::cout << "  --y-min <days>        Min lookback days (default: 3)\n";
+  std::cout << "  --x-min <value>       Min diff percent decimal (default: -0.10)\n";
+  std::cout << "  --x-max <value>       Max diff percent decimal (default: 0.10)\n";
+  std::cout << "  --x-step <value>      Diff sweep step (default: 0.01)\n";
+  std::cout << "  --y-min <days>        Min lookback days (default: 2)\n";
   std::cout << "  --y-max <days>        Max lookback days (default: 20)\n";
   std::cout << "  --y-step <days>       Lookback sweep step (default: 1)\n";
-  std::cout << "  --hold-days <days>    Hold period after buy signal (default: 10)\n";
+  std::cout << "  --hold-min <days>     Min hold days after buy signal (default: 10)\n";
+  std::cout << "  --hold-max <days>     Max hold days after buy signal (default: 60)\n";
+  std::cout << "  --hold-step <days>    Hold-day sweep step (default: 5)\n";
   std::cout << "  --help                Show this help\n";
 }
 
@@ -76,20 +78,26 @@ CliConfig parse_args(int argc, char** argv) {
       config.grid.y_max = std::stoi(need_value(key));
     } else if (key == "--y-step") {
       config.grid.y_step = std::stoi(need_value(key));
-    } else if (key == "--hold-days") {
-      config.grid.hold_days = std::stoi(need_value(key));
+    } else if (key == "--hold-min") {
+      config.grid.hold_days_min = std::stoi(need_value(key));
+    } else if (key == "--hold-max") {
+      config.grid.hold_days_max = std::stoi(need_value(key));
+    } else if (key == "--hold-step") {
+      config.grid.hold_days_step = std::stoi(need_value(key));
     } else {
       throw std::runtime_error("Unknown option: " + key);
     }
   }
 
-  if (config.grid.x_min <= 0.0 || config.grid.x_max <= 0.0 || config.grid.x_step <= 0.0) {
+  if (config.grid.x_step <= 0.0) {
     throw std::runtime_error("X grid values must be positive.");
   }
-  if (config.grid.y_min <= 0 || config.grid.y_max <= 0 || config.grid.y_step <= 0 || config.grid.hold_days <= 0) {
+  if (config.grid.y_min <= 0 || config.grid.y_max <= 0 || config.grid.y_step <= 0 ||
+      config.grid.hold_days_min <= 0 || config.grid.hold_days_max <= 0 || config.grid.hold_days_step <= 0) {
     throw std::runtime_error("Y/hold values must be positive integers.");
   }
-  if (config.grid.x_min > config.grid.x_max || config.grid.y_min > config.grid.y_max) {
+  if (config.grid.x_min > config.grid.x_max || config.grid.y_min > config.grid.y_max ||
+      config.grid.hold_days_min > config.grid.hold_days_max) {
     throw std::runtime_error("Grid min cannot exceed max.");
   }
   return config;
@@ -121,9 +129,13 @@ std::string to_json(const std::vector<SimulationResult>& results, const Simulati
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
   out << "  \"initial_equity\": " << config.initial_equity << ",\n";
-  out << "  \"hold_days\": " << config.grid.hold_days << ",\n";
+  out << "  \"hold_days\": {\n";
+  out << "    \"min\": " << config.grid.hold_days_min << ",\n";
+  out << "    \"max\": " << config.grid.hold_days_max << ",\n";
+  out << "    \"step\": " << config.grid.hold_days_step << "\n";
+  out << "  },\n";
   out << "  \"best\": {\n";
-  out << "    \"dip_pct\": " << best.params.dip_pct << ",\n";
+  out << "    \"diff_pct\": " << best.params.diff_pct << ",\n";
   out << "    \"lookback_days\": " << best.params.lookback_days << ",\n";
   out << "    \"hold_days\": " << best.params.hold_days << ",\n";
   out << "    \"final_equity\": " << best.final_equity << ",\n";
@@ -139,7 +151,7 @@ std::string to_json(const std::vector<SimulationResult>& results, const Simulati
   for (size_t index = 0; index < results.size(); ++index) {
     const SimulationResult& item = results[index];
     out << "    {\n";
-    out << "      \"dip_pct\": " << item.params.dip_pct << ",\n";
+    out << "      \"diff_pct\": " << item.params.diff_pct << ",\n";
     out << "      \"lookback_days\": " << item.params.lookback_days << ",\n";
     out << "      \"hold_days\": " << item.params.hold_days << ",\n";
     out << "      \"final_equity\": " << item.final_equity << ",\n";
@@ -198,8 +210,9 @@ int main(int argc, char** argv) {
 
     std::cout << "Backtest complete.\n";
     std::cout << "Rows loaded: " << prices.size() << "\n";
-    std::cout << "Best dip_pct: " << best.params.dip_pct << "\n";
+    std::cout << "Best diff_pct: " << best.params.diff_pct << "\n";
     std::cout << "Best lookback_days: " << best.params.lookback_days << "\n";
+    std::cout << "Best hold_days: " << best.params.hold_days << "\n";
     std::cout << "Best CAGR: " << std::fixed << std::setprecision(4) << (best.metrics.cagr * 100.0) << "%\n";
     std::cout << "Output written: " << config.output_path << "\n";
 

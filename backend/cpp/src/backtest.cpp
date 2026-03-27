@@ -193,8 +193,10 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
     if (shares == 0.0 && has_lookback) {
       const double lookback_close = prices[index - static_cast<size_t>(params.lookback_days)].close;
       if (lookback_close > 0.0) {
-        const double drop = (close / lookback_close) - 1.0;
-        if (drop <= -params.dip_pct) {
+        const double diff = (close / lookback_close) - 1.0;
+        const bool meets_diff_threshold =
+            (params.diff_pct < 0.0) ? (diff <= params.diff_pct) : (diff >= params.diff_pct);
+        if (meets_diff_threshold) {
           shares = cash / close;
           entry_value = cash;
           cash = 0.0;  // fully invested (no leverage)
@@ -232,12 +234,14 @@ std::vector<SimulationResult> run_grid_search(const std::vector<Candle>& prices,
   std::vector<SimulationResult> results;
   for (double x = config.x_min; x <= config.x_max + 1e-9; x += config.x_step) {
     for (int y = config.y_min; y <= config.y_max; y += config.y_step) {
-      StrategyParams params;
-      params.dip_pct = x;
-      params.lookback_days = y;
-      params.hold_days = config.hold_days;
+      for (int hold_days = config.hold_days_min; hold_days <= config.hold_days_max; hold_days += config.hold_days_step) {
+        StrategyParams params;
+        params.diff_pct = x;
+        params.lookback_days = y;
+        params.hold_days = hold_days;
 
-      results.push_back(run_simulation(prices, params, initial_equity));
+        results.push_back(run_simulation(prices, params, initial_equity));
+      }
     }
   }
   return results;

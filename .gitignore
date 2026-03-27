@@ -11,3 +11,7 @@
 ui/node_modules/
 ui/dist/
 
+# TypeScript incremental/build outputs
+ui/*.tsbuildinfo
+ui/vite.config.js
+ui/vite.config.d.ts
