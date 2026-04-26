@@ -1,5 +1,6 @@
 # C++ build artifacts
 /build/
+/outputs/
 **/CMakeFiles/
 **/CMakeCache.txt
 **/*.obj
@@ -15,3 +16,7 @@ ui/dist/
 ui/*.tsbuildinfo
 ui/vite.config.js
 ui/vite.config.d.ts
+
+# Python artifacts
+__pycache__/
+*.py[cod]

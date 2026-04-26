@@ -80,6 +80,43 @@ double compute_sharpe(const std::vector<double>& equity_curve) {
   return (mean / stddev) * std::sqrt(252.0);
 }
 
+double compute_sortino(const std::vector<double>& equity_curve) {
+  if (equity_curve.size() < 2) {
+    return 0.0;
+  }
+  std::vector<double> returns;
+  returns.reserve(equity_curve.size() - 1);
+  for (size_t index = 1; index < equity_curve.size(); ++index) {
+    const double prev = equity_curve[index - 1];
+    const double current = equity_curve[index];
+    returns.push_back(prev > 0.0 ? (current - prev) / prev : 0.0);
+  }
+
+  double mean = 0.0;
+  for (double value : returns) {
+    mean += value;
+  }
+  mean /= static_cast<double>(returns.size());
+
+  double downside_variance = 0.0;
+  size_t downside_count = 0;
+  for (double value : returns) {
+    if (value < 0.0) {
+      downside_variance += value * value;
+      downside_count += 1;
+    }
+  }
+  if (downside_count == 0) {
+    return 0.0;
+  }
+
+  const double downside_deviation = std::sqrt(downside_variance / static_cast<double>(downside_count));
+  if (downside_deviation == 0.0) {
+    return 0.0;
+  }
+  return (mean / downside_deviation) * std::sqrt(252.0);
+}
+
 // CAGR (annualized return) using ~252 trading days/year.
 double compute_cagr(double initial_equity, double final_equity, size_t bars) {
   if (initial_equity <= 0.0 || final_equity <= 0.0 || bars < 2) {
@@ -92,6 +129,20 @@ double compute_cagr(double initial_equity, double final_equity, size_t bars) {
   return std::pow(final_equity / initial_equity, 1.0 / years) - 1.0;
 }
 }  // namespace
+
+StrategyType strategy_type_from_string(const std::string& value) {
+  if (value == "drop" || value == "dip") {
+    return StrategyType::Drop;
+  }
+  if (value == "gain" || value == "momentum") {
+    return StrategyType::Gain;
+  }
+  throw std::runtime_error("Unknown strategy type: " + value + ". Use 'drop' or 'gain'.");
+}
+
+std::string strategy_type_to_string(StrategyType strategy) {
+  return strategy == StrategyType::Gain ? "gain" : "drop";
+}
 
 // Parses Yahoo-style CSV and keeps Date + adjusted/close price.
 std::vector<Candle> load_prices_from_csv(const std::string& path) {
@@ -166,24 +217,38 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
   double cash = initial_equity;
   double shares = 0.0;
   double entry_value = 0.0;
+  double entry_price = 0.0;
+  std::string entry_date;
   int days_left = 0;
+  int held_days = 0;
   int wins = 0;
   int trades = 0;
 
   // Stores portfolio value each bar; used later for risk metrics.
   std::vector<double> equity_curve;
   equity_curve.reserve(prices.size());
+  result.equity_curve.reserve(prices.size());
 
   for (size_t index = 0; index < prices.size(); ++index) {
     const double close = prices[index].close;
 
     if (shares > 0.0) {
       days_left -= 1;
+      held_days += 1;
       if (days_left <= 0) {
         const double exit_value = shares * close;
         if (exit_value > entry_value) {
           wins += 1;
         }
+        Trade trade;
+        trade.entry_date = entry_date;
+        trade.exit_date = prices[index].date;
+        trade.entry_price = entry_price;
+        trade.exit_price = close;
+        trade.shares = shares;
+        trade.pnl = exit_value - entry_value;
+        trade.holding_days = held_days;
+        result.trades.push_back(trade);
         cash = exit_value;  // sell all shares back into cash
         shares = 0.0;
       }
@@ -194,19 +259,24 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
       const double lookback_close = prices[index - static_cast<size_t>(params.lookback_days)].close;
       if (lookback_close > 0.0) {
         const double diff = (close / lookback_close) - 1.0;
-        const bool meets_diff_threshold =
-            (params.diff_pct < 0.0) ? (diff <= params.diff_pct) : (diff >= params.diff_pct);
+        const double threshold = std::abs(params.diff_pct);
+        const bool meets_diff_threshold = params.strategy == StrategyType::Drop ? diff <= -threshold : diff >= threshold;
         if (meets_diff_threshold) {
           shares = cash / close;
           entry_value = cash;
+          entry_price = close;
+          entry_date = prices[index].date;
           cash = 0.0;  // fully invested (no leverage)
           days_left = params.hold_days;
+          held_days = 0;
           trades += 1;
         }
       }
     }
 
-    equity_curve.push_back(cash + shares * close);
+    const double equity = cash + shares * close;
+    equity_curve.push_back(equity);
+    result.equity_curve.push_back({prices[index].date, equity});
   }
 
   if (shares > 0.0) {
@@ -214,6 +284,15 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
     if (final_value > entry_value) {
       wins += 1;
     }
+    Trade trade;
+    trade.entry_date = entry_date;
+    trade.exit_date = prices.back().date;
+    trade.entry_price = entry_price;
+    trade.exit_price = prices.back().close;
+    trade.shares = shares;
+    trade.pnl = final_value - entry_value;
+    trade.holding_days = held_days;
+    result.trades.push_back(trade);
     result.final_equity = final_value;
   } else {
     result.final_equity = cash;
@@ -223,6 +302,7 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
   result.metrics.cagr = compute_cagr(initial_equity, result.final_equity, prices.size());
   result.metrics.max_drawdown = compute_max_drawdown(equity_curve);
   result.metrics.sharpe = compute_sharpe(equity_curve);
+  result.metrics.sortino = compute_sortino(equity_curve);
   result.metrics.trades = trades;
   result.metrics.win_rate = (trades > 0) ? (static_cast<double>(wins) / static_cast<double>(trades)) : 0.0;
 
@@ -230,12 +310,13 @@ SimulationResult run_simulation(const std::vector<Candle>& prices, const Strateg
 }
 
 // Brute-force parameter sweep (nested loops like Python `for x ...: for y ...:`).
-std::vector<SimulationResult> run_grid_search(const std::vector<Candle>& prices, const GridSearchConfig& config, double initial_equity) {
+std::vector<SimulationResult> run_grid_search(const std::vector<Candle>& prices, const GridSearchConfig& config, StrategyType strategy, double initial_equity) {
   std::vector<SimulationResult> results;
   for (double x = config.x_min; x <= config.x_max + 1e-9; x += config.x_step) {
     for (int y = config.y_min; y <= config.y_max; y += config.y_step) {
       for (int hold_days = config.hold_days_min; hold_days <= config.hold_days_max; hold_days += config.hold_days_step) {
         StrategyParams params;
+        params.strategy = strategy;
         params.diff_pct = x;
         params.lookback_days = y;
         params.hold_days = hold_days;

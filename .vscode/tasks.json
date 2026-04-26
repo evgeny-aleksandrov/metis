@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Backtester (Debug)",
+      "label": "Configure Backtester (Debug)",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -18,21 +18,45 @@
       "problemMatcher": []
     },
     {
-      "label": "Compile Backtester",
+      "label": "Compile Backtester (CMake)",
       "type": "shell",
       "command": "cmake",
       "args": [
         "--build",
-        "build"
+        "build",
+        "--target",
+        "metis_backtester"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "Build Backtester (Debug)",
+      "dependsOn": "Configure Backtester (Debug)",
       "group": {
         "kind": "build",
         "isDefault": true
       },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Compile Backtester (Direct Debug)",
+      "type": "shell",
+      "command": "C:/Strawberry/c/bin/c++.exe",
+      "args": [
+        "-std=c++17",
+        "-g",
+        "-O0",
+        "-Ibackend/cpp/include",
+        "backend/cpp/src/main.cpp",
+        "backend/cpp/src/backtest.cpp",
+        "-o",
+        "build/metis_backtester.exe"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
       "problemMatcher": [
         "$gcc"
       ]

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "metis"
+version = "0.1.0"
+description = "Hybrid Python/C++ trading research and execution scaffold."
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.scripts]
+metis-backtest = "metis.backtest.runner:main"
+metis-fetch-ibkr = "metis.data.ibkr:main"
+metis-live-paper = "metis.live.runner:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

@@ -2,24 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Data Fetch",
-      "type": "PowerShell",
-      "request": "launch",
-      "script": "${workspaceFolder}/scripts/fetch-twelvedata.ps1",
-      "args": [
-        "-Symbol",
-        "SPY",
-        "-OutputPath",
-        "data/SPY.csv"
-      ],
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "name": "Debug Backtester",
+      "name": "C++ Backtester: Drop",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/spy_dip_backtester.exe",
+      "program": "${workspaceFolder}/build/metis_backtester.exe",
       "args": [
+        "--symbol",
+        "SPY",
+        "--strategy",
+        "drop",
         "--csv",
         "data/SPY.csv",
         "--output",
@@ -27,28 +18,28 @@
         "--initial",
         "10000",
         "--x-min",
-        "-0.10",
-        "--x-max",
-        "0.10",
-        "--x-step",
         "0.01",
+        "--x-max",
+        "0.05",
+        "--x-step",
+        "0.02",
         "--y-min",
-        "3",
+        "2",
         "--y-max",
-        "20",
+        "8",
         "--y-step",
         "1",
         "--hold-min",
         "5",
         "--hold-max",
-        "60",
+        "15",
         "--hold-step",
         "5"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "stopAtEntry": false,
-      "preLaunchTask": "Compile Backtester",
+      "preLaunchTask": "Compile Backtester (Direct Debug)",
       "MIMode": "gdb",
       "miDebuggerPath": "C:/Strawberry/c/bin/gdb.exe",
       "setupCommands": [
@@ -58,6 +49,166 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name": "C++ Backtester: Gain",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/metis_backtester.exe",
+      "args": [
+        "--symbol",
+        "SPY",
+        "--strategy",
+        "gain",
+        "--csv",
+        "data/SPY.csv",
+        "--output",
+        "ui/public/latest.json",
+        "--initial",
+        "10000",
+        "--x-min",
+        "0.01",
+        "--x-max",
+        "0.05",
+        "--x-step",
+        "0.02",
+        "--y-min",
+        "2",
+        "--y-max",
+        "8",
+        "--y-step",
+        "1",
+        "--hold-min",
+        "5",
+        "--hold-max",
+        "15",
+        "--hold-step",
+        "5"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "preLaunchTask": "Compile Backtester (Direct Debug)",
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Strawberry/c/bin/gdb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "Python Orchestrator: Drop",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "metis.backtest.runner",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "args": [
+        "--symbol",
+        "SPY",
+        "--strategy",
+        "drop",
+        "--csv",
+        "data/SPY.csv",
+        "--output",
+        "outputs/backtests/latest/report.json",
+        "--x-min",
+        "0.01",
+        "--x-max",
+        "0.05",
+        "--x-step",
+        "0.02",
+        "--y-min",
+        "2",
+        "--y-max",
+        "8",
+        "--hold-min",
+        "5",
+        "--hold-max",
+        "15",
+        "--hold-step",
+        "5"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python Orchestrator: Gain",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "metis.backtest.runner",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "args": [
+        "--symbol",
+        "SPY",
+        "--strategy",
+        "gain",
+        "--csv",
+        "data/SPY.csv",
+        "--output",
+        "outputs/backtests/latest/report.json",
+        "--x-min",
+        "0.01",
+        "--x-max",
+        "0.05",
+        "--x-step",
+        "0.02",
+        "--y-min",
+        "2",
+        "--y-max",
+        "8",
+        "--hold-min",
+        "5",
+        "--hold-max",
+        "15",
+        "--hold-step",
+        "5"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "IBKR Fetch: SPY Daily",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "metis.data.ibkr",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "IBKR_WEB_API_INSECURE": "true"
+      },
+      "args": [
+        "--symbol",
+        "SPY",
+        "--period",
+        "1y",
+        "--bar",
+        "1d"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Live Scaffold: IBKR Session Only",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "metis.live.runner",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "IBKR_WEB_API_INSECURE": "true"
+      },
+      "args": [
+        "--symbol",
+        "SPY",
+        "--paper"
+      ],
+      "console": "integratedTerminal"
     }
   ]
 }

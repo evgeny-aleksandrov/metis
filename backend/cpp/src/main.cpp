@@ -17,16 +17,20 @@ namespace {
 struct CliConfig {
   std::string csv_path = "data/SPY.csv";
   std::string output_path = "ui/public/latest.json";
+  std::string symbol = "SPY";
+  StrategyType strategy = StrategyType::Drop;
   double initial_equity = 10000.0;
   GridSearchConfig grid;
 };
 
 // Prints CLI help text.
 void print_help() {
-  std::cout << "SPY Dip Backtester\n\n";
+  std::cout << "Metis C++ Backtester\n\n";
   std::cout << "Usage:\n";
-  std::cout << "  spy_dip_backtester [options]\n\n";
+  std::cout << "  metis_backtester [options]\n\n";
   std::cout << "Options:\n";
+  std::cout << "  --symbol <ticker>     Symbol label for the output (default: SPY)\n";
+  std::cout << "  --strategy <name>     Strategy type: drop or gain (default: drop)\n";
   std::cout << "  --csv <path>          CSV file with Date + Close/Adj Close columns\n";
   std::cout << "  --output <path>       JSON output path (default: ui/public/latest.json)\n";
   std::cout << "  --initial <amount>    Starting cash (default: 10000)\n";
@@ -64,6 +68,10 @@ CliConfig parse_args(int argc, char** argv) {
       config.csv_path = need_value(key);
     } else if (key == "--output") {
       config.output_path = need_value(key);
+    } else if (key == "--symbol") {
+      config.symbol = need_value(key);
+    } else if (key == "--strategy") {
+      config.strategy = strategy_type_from_string(need_value(key));
     } else if (key == "--initial") {
       config.initial_equity = std::stod(need_value(key));
     } else if (key == "--x-min") {
@@ -92,6 +100,9 @@ CliConfig parse_args(int argc, char** argv) {
   if (config.grid.x_step <= 0.0) {
     throw std::runtime_error("X grid values must be positive.");
   }
+  if (config.grid.x_min < 0.0 || config.grid.x_max < 0.0) {
+    throw std::runtime_error("X threshold values must be non-negative.");
+  }
   if (config.grid.y_min <= 0 || config.grid.y_max <= 0 || config.grid.y_step <= 0 ||
       config.grid.hold_days_min <= 0 || config.grid.hold_days_max <= 0 || config.grid.hold_days_step <= 0) {
     throw std::runtime_error("Y/hold values must be positive integers.");
@@ -118,6 +129,41 @@ std::string now_utc_iso8601() {
   return oss.str();
 }
 
+std::string json_escape(const std::string& value) {
+  std::ostringstream out;
+  for (char ch : value) {
+    if (ch == '"' || ch == '\\') {
+      out << '\\' << ch;
+    } else if (ch == '\n') {
+      out << "\\n";
+    } else if (ch == '\r') {
+      out << "\\r";
+    } else if (ch == '\t') {
+      out << "\\t";
+    } else {
+      out << ch;
+    }
+  }
+  return out.str();
+}
+
+void write_result_json(std::ostringstream& out, const SimulationResult& item, const std::string& indent) {
+  out << indent << "{\n";
+  out << indent << "  \"strategy\": \"" << strategy_type_to_string(item.params.strategy) << "\",\n";
+  out << indent << "  \"diff_pct\": " << item.params.diff_pct << ",\n";
+  out << indent << "  \"lookback_days\": " << item.params.lookback_days << ",\n";
+  out << indent << "  \"hold_days\": " << item.params.hold_days << ",\n";
+  out << indent << "  \"final_equity\": " << item.final_equity << ",\n";
+  out << indent << "  \"total_return\": " << item.metrics.total_return << ",\n";
+  out << indent << "  \"cagr\": " << item.metrics.cagr << ",\n";
+  out << indent << "  \"max_drawdown\": " << item.metrics.max_drawdown << ",\n";
+  out << indent << "  \"sharpe\": " << item.metrics.sharpe << ",\n";
+  out << indent << "  \"sortino\": " << item.metrics.sortino << ",\n";
+  out << indent << "  \"trades\": " << item.metrics.trades << ",\n";
+  out << indent << "  \"win_rate\": " << item.metrics.win_rate << "\n";
+  out << indent << "}";
+}
+
 // Hand-written JSON serializer for result output.
 // C++ streams (`<<`) are similar to building strings with StringBuilder in Java.
 std::string to_json(const std::vector<SimulationResult>& results, const SimulationResult& best, size_t bars, const CliConfig& config) {
@@ -125,43 +171,62 @@ std::string to_json(const std::vector<SimulationResult>& results, const Simulati
   out << std::fixed << std::setprecision(6);
 
   out << "{\n";
-  out << "  \"symbol\": \"SPY\",\n";
+  out << "  \"symbol\": \"" << json_escape(config.symbol) << "\",\n";
+  out << "  \"strategy\": \"" << strategy_type_to_string(config.strategy) << "\",\n";
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
   out << "  \"initial_equity\": " << config.initial_equity << ",\n";
+  out << "  \"threshold_pct\": {\n";
+  out << "    \"min\": " << config.grid.x_min << ",\n";
+  out << "    \"max\": " << config.grid.x_max << ",\n";
+  out << "    \"step\": " << config.grid.x_step << "\n";
+  out << "  },\n";
+  out << "  \"lookback_days\": {\n";
+  out << "    \"min\": " << config.grid.y_min << ",\n";
+  out << "    \"max\": " << config.grid.y_max << ",\n";
+  out << "    \"step\": " << config.grid.y_step << "\n";
+  out << "  },\n";
   out << "  \"hold_days\": {\n";
   out << "    \"min\": " << config.grid.hold_days_min << ",\n";
   out << "    \"max\": " << config.grid.hold_days_max << ",\n";
   out << "    \"step\": " << config.grid.hold_days_step << "\n";
   out << "  },\n";
-  out << "  \"best\": {\n";
-  out << "    \"diff_pct\": " << best.params.diff_pct << ",\n";
-  out << "    \"lookback_days\": " << best.params.lookback_days << ",\n";
-  out << "    \"hold_days\": " << best.params.hold_days << ",\n";
-  out << "    \"final_equity\": " << best.final_equity << ",\n";
-  out << "    \"total_return\": " << best.metrics.total_return << ",\n";
-  out << "    \"cagr\": " << best.metrics.cagr << ",\n";
-  out << "    \"max_drawdown\": " << best.metrics.max_drawdown << ",\n";
-  out << "    \"sharpe\": " << best.metrics.sharpe << ",\n";
-  out << "    \"trades\": " << best.metrics.trades << ",\n";
-  out << "    \"win_rate\": " << best.metrics.win_rate << "\n";
-  out << "  },\n";
+  out << "  \"best\": ";
+  write_result_json(out, best, "  ");
+  out << ",\n";
+  out << "  \"equity_curve\": [\n";
+  for (size_t index = 0; index < best.equity_curve.size(); ++index) {
+    const EquityPoint& point = best.equity_curve[index];
+    out << "    {\"date\": \"" << json_escape(point.date) << "\", \"equity\": " << point.equity << "}";
+    if (index + 1 < best.equity_curve.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "  ],\n";
+  out << "  \"trades\": [\n";
+  for (size_t index = 0; index < best.trades.size(); ++index) {
+    const Trade& trade = best.trades[index];
+    out << "    {\n";
+    out << "      \"entry_date\": \"" << json_escape(trade.entry_date) << "\",\n";
+    out << "      \"exit_date\": \"" << json_escape(trade.exit_date) << "\",\n";
+    out << "      \"entry_price\": " << trade.entry_price << ",\n";
+    out << "      \"exit_price\": " << trade.exit_price << ",\n";
+    out << "      \"shares\": " << trade.shares << ",\n";
+    out << "      \"pnl\": " << trade.pnl << ",\n";
+    out << "      \"holding_days\": " << trade.holding_days << "\n";
+    out << "    }";
+    if (index + 1 < best.trades.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "  ],\n";
   out << "  \"results\": [\n";
 
   for (size_t index = 0; index < results.size(); ++index) {
     const SimulationResult& item = results[index];
-    out << "    {\n";
-    out << "      \"diff_pct\": " << item.params.diff_pct << ",\n";
-    out << "      \"lookback_days\": " << item.params.lookback_days << ",\n";
-    out << "      \"hold_days\": " << item.params.hold_days << ",\n";
-    out << "      \"final_equity\": " << item.final_equity << ",\n";
-    out << "      \"total_return\": " << item.metrics.total_return << ",\n";
-    out << "      \"cagr\": " << item.metrics.cagr << ",\n";
-    out << "      \"max_drawdown\": " << item.metrics.max_drawdown << ",\n";
-    out << "      \"sharpe\": " << item.metrics.sharpe << ",\n";
-    out << "      \"trades\": " << item.metrics.trades << ",\n";
-    out << "      \"win_rate\": " << item.metrics.win_rate << "\n";
-    out << "    }";
+    write_result_json(out, item, "    ");
     if (index + 1 < results.size()) {
       out << ",";
     }
@@ -179,7 +244,7 @@ int main(int argc, char** argv) {
   try {
     const CliConfig config = parse_args(argc, argv);
     const std::vector<Candle> prices = load_prices_from_csv(config.csv_path);
-    std::vector<SimulationResult> results = run_grid_search(prices, config.grid, config.initial_equity);
+    std::vector<SimulationResult> results = run_grid_search(prices, config.grid, config.strategy, config.initial_equity);
 
     if (results.empty()) {
       throw std::runtime_error("No backtest results were produced.");
@@ -209,8 +274,10 @@ int main(int argc, char** argv) {
     out_file.close();
 
     std::cout << "Backtest complete.\n";
+    std::cout << "Symbol: " << config.symbol << "\n";
+    std::cout << "Strategy: " << strategy_type_to_string(config.strategy) << "\n";
     std::cout << "Rows loaded: " << prices.size() << "\n";
-    std::cout << "Best diff_pct: " << best.params.diff_pct << "\n";
+    std::cout << "Best threshold_pct: " << best.params.diff_pct << "\n";
     std::cout << "Best lookback_days: " << best.params.lookback_days << "\n";
     std::cout << "Best hold_days: " << best.params.hold_days << "\n";
     std::cout << "Best CAGR: " << std::fixed << std::setprecision(4) << (best.metrics.cagr * 100.0) << "%\n";
