@@ -8,11 +8,11 @@
       "program": "${workspaceFolder}/build/metis_backtester.exe",
       "args": [
         "--symbol",
-        "SPY",
+        "QQQ",
         "--strategy",
         "drop",
         "--csv",
-        "data/SPY.csv",
+        "data/processed/QQQ/1d.csv",
         "--output",
         "ui/public/latest.json",
         "--initial",
@@ -110,11 +110,9 @@
       },
       "args": [
         "--symbol",
-        "SPY",
+        "QQQ",
         "--strategy",
         "drop",
-        "--csv",
-        "data/SPY.csv",
         "--output",
         "outputs/backtests/latest/report.json",
         "--x-min",
@@ -174,7 +172,7 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "IBKR Fetch: SPY Daily",
+      "name": "IBKR Fetch",
       "type": "debugpy",
       "request": "launch",
       "module": "metis.data.ibkr",
@@ -185,9 +183,9 @@
       },
       "args": [
         "--symbol",
-        "SPY",
+        "QQQ",
         "--period",
-        "1y",
+        "3y",
         "--bar",
         "1d"
       ],

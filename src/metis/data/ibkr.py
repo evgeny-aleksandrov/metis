@@ -146,7 +146,7 @@ def normalize_historical_bars(payload: dict[str, Any]) -> list[PriceBar]:
                 high=_number(row.get("h", close)),
                 low=_number(row.get("l", close)),
                 close=close,
-                adj_close=close,
+                adj_close=close, # Could also remove it, IBKR doesn't provide this
                 volume=volume,
             )
         )
