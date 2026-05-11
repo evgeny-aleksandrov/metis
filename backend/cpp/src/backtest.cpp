@@ -327,3 +327,12 @@ std::vector<SimulationResult> run_grid_search(const std::vector<Candle>& prices,
   }
   return results;
 }
+
+void sort_results_by_cagr(std::vector<SimulationResult>& results) {
+  std::sort(results.begin(), results.end(), [](const SimulationResult& left, const SimulationResult& right) {
+    if (left.metrics.cagr == right.metrics.cagr) {
+      return left.final_equity > right.final_equity;
+    }
+    return left.metrics.cagr > right.metrics.cagr;
+  });
+}

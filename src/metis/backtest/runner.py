@@ -41,6 +41,8 @@ def run_backtest(args: argparse.Namespace) -> Path:
         str(exe),
         "--symbol",
         args.symbol.upper(),
+        "--mode",
+        args.mode,
         "--strategy",
         args.strategy,
         "--csv",
@@ -67,6 +69,10 @@ def run_backtest(args: argparse.Namespace) -> Path:
         str(args.hold_max),
         "--hold-step",
         str(args.hold_step),
+        "--walk-train-months",
+        str(args.walk_train_months),
+        "--walk-test-months",
+        str(args.walk_test_months),
     ]
     subprocess.run(command, check=True)
 
@@ -77,10 +83,8 @@ def run_backtest(args: argparse.Namespace) -> Path:
 
     with output_path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
-    print(
-        f"{payload['symbol']} {payload['strategy']} best CAGR "
-        f"{payload['best']['cagr'] * 100:.2f}% from {payload['bars']} bars"
-    )
+    cagr_label = "walk-forward CAGR" if payload.get("mode") == "walk-forward" else "best CAGR"
+    print(f"{payload['symbol']} {payload['strategy']} {cagr_label} {payload['best']['cagr'] * 100:.2f}% from {payload['bars']} bars")
     return output_path
 
 
@@ -88,6 +92,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Python orchestration for the C++ Metis backtester.")
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--symbol", default="SPY")
+    parser.add_argument("--mode", choices=["grid", "walk-forward"], default="grid")
     parser.add_argument("--strategy", choices=["drop", "gain"], default="drop")
     parser.add_argument("--csv")
     parser.add_argument("--output", default="outputs/backtests/latest/report.json")
@@ -104,10 +109,11 @@ def main() -> None:
     parser.add_argument("--hold-min", type=int, default=10)
     parser.add_argument("--hold-max", type=int, default=60)
     parser.add_argument("--hold-step", type=int, default=5)
+    parser.add_argument("--walk-train-months", type=int, default=24)
+    parser.add_argument("--walk-test-months", type=int, default=6)
     parser.add_argument("--initial-equity", type=float, default=10000)
     run_backtest(parser.parse_args())
 
 
 if __name__ == "__main__":
     main()
-

@@ -77,5 +77,6 @@ std::vector<Candle> load_prices_from_csv(const std::string& path);
 SimulationResult run_simulation(const std::vector<Candle>& prices, const StrategyParams& params, double initial_equity);
 // Runs many backtests over parameter ranges.
 std::vector<SimulationResult> run_grid_search(const std::vector<Candle>& prices, const GridSearchConfig& config, StrategyType strategy, double initial_equity);
+void sort_results_by_cagr(std::vector<SimulationResult>& results);
 StrategyType strategy_type_from_string(const std::string& value);
 std::string strategy_type_to_string(StrategyType strategy);
