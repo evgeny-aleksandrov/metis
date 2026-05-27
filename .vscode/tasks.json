@@ -18,7 +18,20 @@
       "problemMatcher": []
     },
     {
-      "label": "Compile Backtester (CMake)",
+      "label": "Prepare Build Directory",
+      "type": "shell",
+      "command": "mkdir",
+      "args": [
+        "-p",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Backtester (CMake)",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -31,19 +44,16 @@
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": "Configure Backtester (Debug)",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
       "problemMatcher": [
         "$gcc"
       ]
     },
     {
-      "label": "Compile Backtester (Direct Debug)",
+      "label": "Build Backtester (Debug)",
       "type": "shell",
-      "command": "C:/Strawberry/c/bin/c++.exe",
+      "command": "xcrun",
       "args": [
+        "clang++",
         "-std=c++17",
         "-g",
         "-O0",
@@ -51,12 +61,16 @@
         "backend/cpp/src/main.cpp",
         "backend/cpp/src/backtest.cpp",
         "-o",
-        "build/metis_backtester.exe"
+        "build/metis_backtester"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "group": "build",
+      "dependsOn": "Prepare Build Directory",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "problemMatcher": [
         "$gcc"
       ]

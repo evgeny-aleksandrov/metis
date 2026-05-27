@@ -12,15 +12,14 @@ from metis.data.storage import processed_price_path
 
 def find_backtester(repo_root: Path) -> Path:
     candidates = [
-        repo_root / "build" / "Release" / "metis_backtester.exe",
-        repo_root / "build" / "metis_backtester.exe",
-        repo_root / "build" / "Release" / "spy_dip_backtester.exe",
-        repo_root / "build" / "spy_dip_backtester.exe",
+        repo_root / "build" / "metis_backtester",
+        repo_root / "build" / "Debug" / "metis_backtester",
+        repo_root / "build" / "Release" / "metis_backtester",
     ]
     for candidate in candidates:
         if candidate.exists():
             return candidate
-    raise FileNotFoundError("Backtester executable not found. Run scripts/build-backtester.ps1 first.")
+    raise FileNotFoundError("Backtester executable not found. Run scripts/build-backtester.sh first.")
 
 
 def run_backtest(args: argparse.Namespace) -> Path:

@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "C++ Backtester: Drop",
-      "type": "cppdbg",
+      "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/metis_backtester.exe",
+      "program": "${workspaceFolder}/build/metis_backtester",
       "args": [
         "--symbol",
         "QQQ",
@@ -43,24 +43,14 @@
         "2"
       ],
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "stopAtEntry": false,
-      "preLaunchTask": "Compile Backtester (Direct Debug)",
-      "MIMode": "gdb",
-      "miDebuggerPath": "C:/Strawberry/c/bin/gdb.exe",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
+      "terminal": "integrated",
+      "preLaunchTask": "Build Backtester (Debug)"
     },
     {
       "name": "C++ Backtester: Gain",
-      "type": "cppdbg",
+      "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/metis_backtester.exe",
+      "program": "${workspaceFolder}/build/metis_backtester",
       "args": [
         "--symbol",
         "QQQ",
@@ -92,18 +82,8 @@
         "2"
       ],
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "stopAtEntry": false,
-      "preLaunchTask": "Compile Backtester (Direct Debug)",
-      "MIMode": "gdb",
-      "miDebuggerPath": "C:/Strawberry/c/bin/gdb.exe",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
+      "terminal": "integrated",
+      "preLaunchTask": "Build Backtester (Debug)"
     },
     {
       "name": "Python Orchestrator: Drop",
