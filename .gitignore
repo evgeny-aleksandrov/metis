@@ -8,9 +8,15 @@
 **/*.ilk
 **/*.exe
 
+# Generated datasets
+data/processed/
+
 # Node artifacts
 ui/node_modules/
 ui/dist/
+
+# Generated UI report artifact
+ui/public/latest.json
 
 # TypeScript incremental/build outputs
 ui/*.tsbuildinfo

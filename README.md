@@ -14,3 +14,11 @@ The C++ engine currently supports two generic long-only stock strategies:
 - `gain`: buy after the stock rises by at least `X%` over `Y` trading days.
 
 Both strategies then hold for a fixed number of days. The grid search sweeps threshold, lookback, and hold days.
+
+## IBKR Historical Data
+
+Before fetching data, start the IBKR Client Portal Gateway and complete the browser login flow. On macOS, Linux, or WSL2, run this from the extracted `clientportal.gw` directory:
+
+```bash
+bin/run.sh root/conf.yaml
+```
