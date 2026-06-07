@@ -7,7 +7,21 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(metis_backtester
   src/main.cpp
-  src/backtest.cpp
+  src/analytics/indicators.cpp
+  src/app/backtester_app.cpp
+  src/backtest/backtest.cpp
+  src/backtest/metrics.cpp
+  src/backtest/walk_forward.cpp
+  src/cli/cli_config.cpp
+  src/core/date.cpp
+  src/core/file_io.cpp
+  src/data/csv_loader.cpp
+  src/model/ridge_regression.cpp
+  src/reporting/console_summary.cpp
+  src/reporting/json_writer.cpp
+  src/reporting/training_results_writer.cpp
+  src/strategy/strategy.cpp
+  src/strategy/strategy_type.cpp
 )
 
 target_include_directories(metis_backtester PRIVATE include)
