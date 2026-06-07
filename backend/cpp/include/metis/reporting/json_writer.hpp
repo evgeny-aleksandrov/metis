@@ -1,5 +1,6 @@
 #pragma once
 
+#include "metis/app/backtester_workflow.hpp"
 #include "metis/backtest/walk_forward.hpp"
 #include "metis/config/run_config.hpp"
 #include "metis/types.hpp"
@@ -22,5 +23,9 @@ std::string to_walk_forward_json(
     const std::vector<WalkForwardPeriod>& periods,
     size_t bars,
     const BacktestRunConfig& config);
+std::string to_backtest_report_json(
+    const BacktestRunConfig& config,
+    size_t bars,
+    const BacktestExecutionResult& result);
 
 }  // namespace metis

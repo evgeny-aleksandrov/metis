@@ -295,12 +295,13 @@ SimulationResult run_buy_and_hold(
 }
 
 // Brute-force parameter sweep (nested loops like Python `for x ...: for y ...:`).
-DiscreteGridSearchOptimizer::DiscreteGridSearchOptimizer(DiscreteStrategySearchConfig config) : config_(config) {}
+DiscreteGridSearchOptimizer::DiscreteGridSearchOptimizer(DiscreteGridRunConfig config) : config_(config) {}
 
 std::vector<SimulationResult> DiscreteGridSearchOptimizer::evaluate(
     const std::vector<Candle>& prices,
     const ExecutionConfig& execution) const {
-  return run_grid_search(prices, config_.grid, config_.strategy, execution);
+  const GridSearchConfig grid = grid_search_config_from_discrete_grid_config(config_);
+  return run_grid_search(prices, grid, strategy_type_from_discrete_grid_strategy(config_.strategy), execution);
 }
 
 std::vector<SimulationResult> run_grid_search(

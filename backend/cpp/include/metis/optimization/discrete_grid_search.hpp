@@ -10,14 +10,14 @@ namespace metis {
 
 class DiscreteGridSearchOptimizer final : public Optimizer {
 public:
-  explicit DiscreteGridSearchOptimizer(DiscreteStrategySearchConfig config);
+  explicit DiscreteGridSearchOptimizer(DiscreteGridRunConfig config);
 
   std::vector<SimulationResult> evaluate(
       const std::vector<Candle>& prices,
       const ExecutionConfig& execution) const override;
 
 private:
-  DiscreteStrategySearchConfig config_;
+  DiscreteGridRunConfig config_;
 };
 
 std::vector<SimulationResult> run_grid_search(

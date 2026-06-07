@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <sstream>
 #include <stdexcept>
+#include <variant>
 
 namespace metis {
 namespace {
@@ -36,7 +37,8 @@ SimulationResult run_walk_forward(
   }
 
   SimulationResult combined;
-  combined.params.strategy = config.discrete_search.strategy;
+  const DiscreteGridRunConfig& discrete_grid_config = std::get<DiscreteGridRunConfig>(config.approach_config);
+  combined.params.strategy = strategy_type_from_discrete_grid_strategy(discrete_grid_config.strategy);
   combined.final_equity = config.execution.initial_equity;
   double current_equity = config.execution.initial_equity;
   size_t test_bars = 0;

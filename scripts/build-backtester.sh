@@ -19,7 +19,11 @@ else
     -I"$repo_root/backend/cpp/include" \
     "$repo_root/backend/cpp/src/main.cpp" \
     "$repo_root/backend/cpp/src/analytics/indicators.cpp" \
+    "$repo_root/backend/cpp/src/app/backtester_workflow.cpp" \
     "$repo_root/backend/cpp/src/app/backtester_app.cpp" \
+    "$repo_root/backend/cpp/src/app/approach/buy_and_hold_runner.cpp" \
+    "$repo_root/backend/cpp/src/app/approach/discrete_grid_runner.cpp" \
+    "$repo_root/backend/cpp/src/app/approach/ridge_runner.cpp" \
     "$repo_root/backend/cpp/src/backtest/backtest.cpp" \
     "$repo_root/backend/cpp/src/backtest/metrics.cpp" \
     "$repo_root/backend/cpp/src/backtest/walk_forward.cpp" \
@@ -30,6 +34,7 @@ else
     "$repo_root/backend/cpp/src/cli/cli_config.cpp" \
     "$repo_root/backend/cpp/src/cli/help.cpp" \
     "$repo_root/backend/cpp/src/cli/parse_common.cpp" \
+    "$repo_root/backend/cpp/src/config/run_config.cpp" \
     "$repo_root/backend/cpp/src/core/date.cpp" \
     "$repo_root/backend/cpp/src/core/file_io.cpp" \
     "$repo_root/backend/cpp/src/data/csv_loader.cpp" \

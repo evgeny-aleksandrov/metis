@@ -1,12 +1,12 @@
 #include "metis/reporting/json_writer.hpp"
 
-#include "metis/cli/approach.hpp"
 #include "metis/core/date.hpp"
 #include "metis/strategy/strategy_type.hpp"
 
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
+#include <variant>
 
 namespace metis {
 namespace {
@@ -53,6 +53,16 @@ void write_benchmark_json(std::ostringstream& out, const SimulationResult& item,
 }
 
 void write_config_json(std::ostringstream& out, const BacktestRunConfig& config) {
+  if (!std::holds_alternative<DiscreteGridRunConfig>(config.approach_config)) {
+    out << "  \"selection\": {\n";
+    out << "    \"mode\": \"none\"\n";
+    out << "  },\n";
+    return;
+  }
+
+  const DiscreteGridRunConfig& discrete_grid_config = std::get<DiscreteGridRunConfig>(config.approach_config);
+  const GridSearchConfig grid = grid_search_config_from_discrete_grid_config(discrete_grid_config);
+
   out << "  \"selection\": {\n";
   out << "    \"mode\": \"filtered-best-sortino\",\n";
   out << "    \"rank_by\": \"sortino\",\n";
@@ -61,59 +71,59 @@ void write_config_json(std::ostringstream& out, const BacktestRunConfig& config)
   out << "    \"top_k\": 1\n";
   out << "  },\n";
   out << "  \"grid_sampling\": {\n";
-  out << "    \"sample_pct\": " << config.discrete_search.grid.grid_sample_pct << ",\n";
-  out << "    \"sample_seed\": " << config.discrete_search.grid.grid_sample_seed << ",\n";
-  out << "    \"random_samples\": " << config.discrete_search.grid.grid_random_samples << "\n";
+  out << "    \"sample_pct\": " << grid.grid_sample_pct << ",\n";
+  out << "    \"sample_seed\": " << grid.grid_sample_seed << ",\n";
+  out << "    \"random_samples\": " << grid.grid_random_samples << "\n";
   out << "  },\n";
   out << "  \"threshold_pct\": {\n";
-  out << "    \"min\": " << config.discrete_search.grid.x_min << ",\n";
-  out << "    \"max\": " << config.discrete_search.grid.x_max << ",\n";
-  out << "    \"step\": " << config.discrete_search.grid.x_step << "\n";
+  out << "    \"min\": " << grid.x_min << ",\n";
+  out << "    \"max\": " << grid.x_max << ",\n";
+  out << "    \"step\": " << grid.x_step << "\n";
   out << "  },\n";
   out << "  \"lookback_days\": {\n";
-  out << "    \"min\": " << config.discrete_search.grid.y_min << ",\n";
-  out << "    \"max\": " << config.discrete_search.grid.y_max << ",\n";
-  out << "    \"step\": " << config.discrete_search.grid.y_step << "\n";
+  out << "    \"min\": " << grid.y_min << ",\n";
+  out << "    \"max\": " << grid.y_max << ",\n";
+  out << "    \"step\": " << grid.y_step << "\n";
   out << "  },\n";
   out << "  \"hold_days\": {\n";
-  out << "    \"min\": " << config.discrete_search.grid.hold_days_min << ",\n";
-  out << "    \"max\": " << config.discrete_search.grid.hold_days_max << ",\n";
-  out << "    \"step\": " << config.discrete_search.grid.hold_days_step << "\n";
+  out << "    \"min\": " << grid.hold_days_min << ",\n";
+  out << "    \"max\": " << grid.hold_days_max << ",\n";
+  out << "    \"step\": " << grid.hold_days_step << "\n";
   out << "  },\n";
   out << "  \"regime\": {\n";
-  out << "    \"fast_lookback_min\": " << config.discrete_search.grid.fast_lookback_min << ",\n";
-  out << "    \"fast_lookback_max\": " << config.discrete_search.grid.fast_lookback_max << ",\n";
-  out << "    \"fast_lookback_step\": " << config.discrete_search.grid.fast_lookback_step << ",\n";
-  out << "    \"short_y_min\": " << config.discrete_search.grid.short_y_min << ",\n";
-  out << "    \"short_y_max\": " << config.discrete_search.grid.short_y_max << ",\n";
-  out << "    \"short_y_step\": " << config.discrete_search.grid.short_y_step << ",\n";
-  out << "    \"short_fast_lookback_min\": " << config.discrete_search.grid.short_fast_lookback_min << ",\n";
-  out << "    \"short_fast_lookback_max\": " << config.discrete_search.grid.short_fast_lookback_max << ",\n";
-  out << "    \"short_fast_lookback_step\": " << config.discrete_search.grid.short_fast_lookback_step << ",\n";
-  out << "    \"allow_short_min\": " << config.discrete_search.grid.allow_short_min << ",\n";
-  out << "    \"allow_short_max\": " << config.discrete_search.grid.allow_short_max << "\n";
+  out << "    \"fast_lookback_min\": " << grid.fast_lookback_min << ",\n";
+  out << "    \"fast_lookback_max\": " << grid.fast_lookback_max << ",\n";
+  out << "    \"fast_lookback_step\": " << grid.fast_lookback_step << ",\n";
+  out << "    \"short_y_min\": " << grid.short_y_min << ",\n";
+  out << "    \"short_y_max\": " << grid.short_y_max << ",\n";
+  out << "    \"short_y_step\": " << grid.short_y_step << ",\n";
+  out << "    \"short_fast_lookback_min\": " << grid.short_fast_lookback_min << ",\n";
+  out << "    \"short_fast_lookback_max\": " << grid.short_fast_lookback_max << ",\n";
+  out << "    \"short_fast_lookback_step\": " << grid.short_fast_lookback_step << ",\n";
+  out << "    \"allow_short_min\": " << grid.allow_short_min << ",\n";
+  out << "    \"allow_short_max\": " << grid.allow_short_max << "\n";
   out << "  },\n";
   out << "  \"risk_exits\": {\n";
-  out << "    \"take_profit_min\": " << config.discrete_search.grid.take_profit_min << ",\n";
-  out << "    \"take_profit_max\": " << config.discrete_search.grid.take_profit_max << ",\n";
-  out << "    \"take_profit_step\": " << config.discrete_search.grid.take_profit_step << ",\n";
-  out << "    \"stop_loss_min\": " << config.discrete_search.grid.stop_loss_min << ",\n";
-  out << "    \"stop_loss_max\": " << config.discrete_search.grid.stop_loss_max << ",\n";
-  out << "    \"stop_loss_step\": " << config.discrete_search.grid.stop_loss_step << ",\n";
-  out << "    \"trailing_stop_min\": " << config.discrete_search.grid.trailing_stop_min << ",\n";
-  out << "    \"trailing_stop_max\": " << config.discrete_search.grid.trailing_stop_max << ",\n";
-  out << "    \"trailing_stop_step\": " << config.discrete_search.grid.trailing_stop_step << ",\n";
-  out << "    \"regime_weak_exit_min\": " << config.discrete_search.grid.regime_weak_exit_min << ",\n";
-  out << "    \"regime_weak_exit_max\": " << config.discrete_search.grid.regime_weak_exit_max << ",\n";
-  out << "    \"volatility_lookback_min\": " << config.discrete_search.grid.volatility_lookback_min << ",\n";
-  out << "    \"volatility_lookback_max\": " << config.discrete_search.grid.volatility_lookback_max << ",\n";
-  out << "    \"volatility_lookback_step\": " << config.discrete_search.grid.volatility_lookback_step << ",\n";
-  out << "    \"target_volatility_min\": " << config.discrete_search.grid.target_volatility_min << ",\n";
-  out << "    \"target_volatility_max\": " << config.discrete_search.grid.target_volatility_max << ",\n";
-  out << "    \"target_volatility_step\": " << config.discrete_search.grid.target_volatility_step << ",\n";
-  out << "    \"max_position_pct_min\": " << config.discrete_search.grid.max_position_pct_min << ",\n";
-  out << "    \"max_position_pct_max\": " << config.discrete_search.grid.max_position_pct_max << ",\n";
-  out << "    \"max_position_pct_step\": " << config.discrete_search.grid.max_position_pct_step << "\n";
+  out << "    \"take_profit_min\": " << grid.take_profit_min << ",\n";
+  out << "    \"take_profit_max\": " << grid.take_profit_max << ",\n";
+  out << "    \"take_profit_step\": " << grid.take_profit_step << ",\n";
+  out << "    \"stop_loss_min\": " << grid.stop_loss_min << ",\n";
+  out << "    \"stop_loss_max\": " << grid.stop_loss_max << ",\n";
+  out << "    \"stop_loss_step\": " << grid.stop_loss_step << ",\n";
+  out << "    \"trailing_stop_min\": " << grid.trailing_stop_min << ",\n";
+  out << "    \"trailing_stop_max\": " << grid.trailing_stop_max << ",\n";
+  out << "    \"trailing_stop_step\": " << grid.trailing_stop_step << ",\n";
+  out << "    \"regime_weak_exit_min\": " << grid.regime_weak_exit_min << ",\n";
+  out << "    \"regime_weak_exit_max\": " << grid.regime_weak_exit_max << ",\n";
+  out << "    \"volatility_lookback_min\": " << grid.volatility_lookback_min << ",\n";
+  out << "    \"volatility_lookback_max\": " << grid.volatility_lookback_max << ",\n";
+  out << "    \"volatility_lookback_step\": " << grid.volatility_lookback_step << ",\n";
+  out << "    \"target_volatility_min\": " << grid.target_volatility_min << ",\n";
+  out << "    \"target_volatility_max\": " << grid.target_volatility_max << ",\n";
+  out << "    \"target_volatility_step\": " << grid.target_volatility_step << ",\n";
+  out << "    \"max_position_pct_min\": " << grid.max_position_pct_min << ",\n";
+  out << "    \"max_position_pct_max\": " << grid.max_position_pct_max << ",\n";
+  out << "    \"max_position_pct_step\": " << grid.max_position_pct_step << "\n";
   out << "  },\n";
 }
 
@@ -190,8 +200,8 @@ std::string to_json(
   out << "{\n";
   out << "  \"symbol\": \"" << json_escape(config.data.symbol) << "\",\n";
   out << "  \"mode\": \"walk-forward\",\n";
-  out << "  \"approach\": \"" << approach_type_to_string(config.approach) << "\",\n";
-  out << "  \"strategy\": \"" << strategy_family_to_string(config.strategy) << "\",\n";
+  out << "  \"approach\": \"" << approach_name(config) << "\",\n";
+  out << "  \"strategy\": \"" << strategy_name(config) << "\",\n";
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
   out << "  \"initial_equity\": " << config.execution.initial_equity << ",\n";
@@ -235,8 +245,8 @@ std::string to_walk_forward_json(
   out << "{\n";
   out << "  \"symbol\": \"" << json_escape(config.data.symbol) << "\",\n";
   out << "  \"mode\": \"walk-forward\",\n";
-  out << "  \"approach\": \"" << approach_type_to_string(config.approach) << "\",\n";
-  out << "  \"strategy\": \"" << strategy_family_to_string(config.strategy) << "\",\n";
+  out << "  \"approach\": \"" << approach_name(config) << "\",\n";
+  out << "  \"strategy\": \"" << strategy_name(config) << "\",\n";
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
   out << "  \"initial_equity\": " << config.execution.initial_equity << ",\n";
@@ -282,6 +292,21 @@ std::string to_walk_forward_json(
   out << "  ]\n";
   out << "}\n";
   return out.str();
+}
+
+std::string to_backtest_report_json(
+    const BacktestRunConfig& config,
+    size_t bars,
+    const BacktestExecutionResult& result) {
+  if (result.has_walk_forward) {
+    return to_walk_forward_json(
+        result.summary,
+        result.benchmark,
+        result.walk_forward_periods,
+        bars,
+        config);
+  }
+  return to_json({}, result.summary, result.benchmark, bars, config);
 }
 
 }  // namespace metis

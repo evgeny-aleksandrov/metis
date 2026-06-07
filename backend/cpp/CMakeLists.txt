@@ -7,8 +7,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(metis_backtester
   src/main.cpp
+  src/app/backtester_workflow.cpp
   src/analytics/indicators.cpp
   src/app/backtester_app.cpp
+  src/app/approach/buy_and_hold_runner.cpp
+  src/app/approach/discrete_grid_runner.cpp
+  src/app/approach/ridge_runner.cpp
   src/backtest/backtest.cpp
   src/backtest/metrics.cpp
   src/backtest/walk_forward.cpp
@@ -19,6 +23,7 @@ add_executable(metis_backtester
   src/cli/cli_config.cpp
   src/cli/help.cpp
   src/cli/parse_common.cpp
+  src/config/run_config.cpp
   src/core/date.cpp
   src/core/file_io.cpp
   src/data/csv_loader.cpp

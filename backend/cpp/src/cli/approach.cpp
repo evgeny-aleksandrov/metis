@@ -100,17 +100,40 @@ bool is_strategy_supported_by_approach(ApproachType approach, StrategyFamily str
          strategy == StrategyFamily::RidgeVolTarget;
 }
 
-StrategyType discrete_strategy_type_from_family(StrategyFamily strategy) {
+BuyAndHoldStrategy buy_and_hold_strategy_from_family(StrategyFamily strategy) {
+  if (strategy == StrategyFamily::LumpSumBuyAndHold) {
+    return BuyAndHoldStrategy::LumpSum;
+  }
+  if (strategy == StrategyFamily::ScheduledBuy) {
+    return BuyAndHoldStrategy::ScheduledBuy;
+  }
+  throw std::runtime_error("Strategy is not supported by the buy-and-hold approach: " + strategy_family_to_string(strategy));
+}
+
+DiscreteGridStrategy discrete_grid_strategy_from_family(StrategyFamily strategy) {
   if (strategy == StrategyFamily::Gain) {
-    return StrategyType::Gain;
+    return DiscreteGridStrategy::Gain;
   }
   if (strategy == StrategyFamily::Regime) {
-    return StrategyType::Regime;
+    return DiscreteGridStrategy::Regime;
   }
   if (strategy == StrategyFamily::Drop) {
-    return StrategyType::Drop;
+    return DiscreteGridStrategy::Drop;
   }
   throw std::runtime_error("Strategy is not supported by the discrete-grid approach: " + strategy_family_to_string(strategy));
+}
+
+RidgeStrategy ridge_strategy_from_family(StrategyFamily strategy) {
+  if (strategy == StrategyFamily::RidgeDirectional) {
+    return RidgeStrategy::Directional;
+  }
+  if (strategy == StrategyFamily::RidgeLongShort) {
+    return RidgeStrategy::LongShort;
+  }
+  if (strategy == StrategyFamily::RidgeVolTarget) {
+    return RidgeStrategy::VolTarget;
+  }
+  throw std::runtime_error("Strategy is not supported by the ridge approach: " + strategy_family_to_string(strategy));
 }
 
 }  // namespace metis

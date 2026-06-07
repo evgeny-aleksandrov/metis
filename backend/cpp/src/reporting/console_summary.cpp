@@ -1,8 +1,5 @@
 #include "metis/reporting/console_summary.hpp"
 
-#include "metis/cli/approach.hpp"
-#include "metis/strategy/strategy_type.hpp"
-
 #include <iomanip>
 #include <iostream>
 
@@ -16,8 +13,8 @@ void print_summary(
     size_t walk_periods) {
   std::cout << "Backtest complete.\n";
   std::cout << "Symbol: " << config.data.symbol << "\n";
-  std::cout << "Approach: " << approach_type_to_string(config.approach) << "\n";
-  std::cout << "Strategy: " << strategy_family_to_string(config.strategy) << "\n";
+  std::cout << "Approach: " << approach_name(config) << "\n";
+  std::cout << "Strategy: " << strategy_name(config) << "\n";
   std::cout << "Rows loaded: " << rows_loaded << "\n";
   std::cout << "Fixed cost/order: " << config.execution.costs.fixed_per_order << "\n";
   std::cout << "Variable cost rate/order: " << config.execution.costs.variable_rate << "\n";

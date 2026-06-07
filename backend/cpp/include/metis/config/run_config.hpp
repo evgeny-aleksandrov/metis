@@ -3,24 +3,25 @@
 #include "metis/types.hpp"
 
 #include <string>
+#include <variant>
 
 namespace metis {
 
-enum class ApproachType {
-  BuyAndHold,
-  DiscreteGrid,
-  Ridge
+enum class BuyAndHoldStrategy {
+  LumpSum,
+  ScheduledBuy
 };
 
-enum class StrategyFamily {
-  LumpSumBuyAndHold,
-  ScheduledBuy,
+enum class DiscreteGridStrategy {
   Drop,
   Gain,
-  Regime,
-  RidgeDirectional,
-  RidgeLongShort,
-  RidgeVolTarget
+  Regime
+};
+
+enum class RidgeStrategy {
+  Directional,
+  LongShort,
+  VolTarget
 };
 
 struct DataConfig {
@@ -44,19 +45,76 @@ struct WalkForwardConfig {
   int test_months = 6;
 };
 
-struct DiscreteStrategySearchConfig {
-  StrategyType strategy = StrategyType::Drop;
-  GridSearchConfig grid;
+template <typename T>
+struct Range {
+  T min = {};
+  T max = {};
+  T step = {};
 };
 
+struct SearchSettings {
+  double sample_pct = 1.0;
+  unsigned int seed = 42;
+  int random_samples = 0;
+};
+
+struct BuyAndHoldSearchSpace {};
+
+struct DiscreteGridSearchSpace {
+  Range<double> threshold_pct{0.01, 0.10, 0.01};
+  Range<int> lookback_days{2, 20, 1};
+  Range<int> fast_lookback_days{2, 10, 1};
+  Range<int> short_lookback_days{0, 0, 1};
+  Range<int> short_fast_lookback_days{0, 0, 1};
+  Range<int> hold_days{10, 60, 5};
+  Range<double> take_profit_pct{0.0, 0.0, 0.01};
+  Range<double> stop_loss_pct{0.0, 0.0, 0.01};
+  Range<double> trailing_stop_pct{0.0, 0.0, 0.01};
+  Range<int> regime_weak_exit{0, 0, 1};
+  Range<int> allow_short{0, 0, 1};
+  Range<int> volatility_lookback_days{0, 0, 1};
+  Range<double> target_volatility{0.0, 0.0, 0.01};
+  Range<double> max_position_pct{1.0, 1.0, 0.25};
+};
+
+struct RidgeSearchSpace {
+  Range<double> alpha{0.0, 0.0, 0.1};
+  Range<int> feature_lookback_days{1, 1, 1};
+  Range<int> target_horizon_days{1, 1, 1};
+  Range<double> signal_threshold{0.0, 0.0, 0.01};
+};
+
+struct BuyAndHoldRunConfig {
+  BuyAndHoldStrategy strategy = BuyAndHoldStrategy::LumpSum;
+  BuyAndHoldSearchSpace search_space;
+  SearchSettings search;
+};
+
+struct DiscreteGridRunConfig {
+  DiscreteGridStrategy strategy = DiscreteGridStrategy::Drop;
+  DiscreteGridSearchSpace search_space;
+  SearchSettings search;
+};
+
+struct RidgeRunConfig {
+  RidgeStrategy strategy = RidgeStrategy::Directional;
+  RidgeSearchSpace search_space;
+  SearchSettings search;
+};
+
+using ApproachRunConfig = std::variant<BuyAndHoldRunConfig, DiscreteGridRunConfig, RidgeRunConfig>;
+
 struct BacktestRunConfig {
-  ApproachType approach = ApproachType::DiscreteGrid;
-  StrategyFamily strategy = StrategyFamily::Drop;
   DataConfig data;
   OutputConfig output;
   ExecutionConfig execution;
   WalkForwardConfig walk_forward;
-  DiscreteStrategySearchConfig discrete_search;
+  ApproachRunConfig approach_config = DiscreteGridRunConfig{};
 };
+
+GridSearchConfig grid_search_config_from_discrete_grid_config(const DiscreteGridRunConfig& config);
+StrategyType strategy_type_from_discrete_grid_strategy(DiscreteGridStrategy strategy);
+std::string approach_name(const BacktestRunConfig& config);
+std::string strategy_name(const BacktestRunConfig& config);
 
 }  // namespace metis

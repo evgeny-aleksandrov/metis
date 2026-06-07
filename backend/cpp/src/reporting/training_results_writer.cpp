@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <variant>
 
 namespace metis {
 
@@ -42,14 +43,16 @@ std::string csv_escape(const std::string& value) {
 }
 
 std::filesystem::path training_results_run_dir(const BacktestRunConfig& config, const std::string& run_id) {
+  const DiscreteGridRunConfig& discrete_grid_config = std::get<DiscreteGridRunConfig>(config.approach_config);
+  const GridSearchConfig grid = grid_search_config_from_discrete_grid_config(discrete_grid_config);
   std::ostringstream name;
   name << run_id
        << "_" << sanitize_path_part(config.data.symbol)
-       << "_" << strategy_type_to_string(config.discrete_search.strategy)
+       << "_" << strategy_type_to_string(strategy_type_from_discrete_grid_strategy(discrete_grid_config.strategy))
        << "_train" << config.walk_forward.train_months << "m"
        << "_test" << config.walk_forward.test_months << "m"
-       << "_seed" << config.discrete_search.grid.grid_sample_seed
-       << "_samples" << config.discrete_search.grid.grid_random_samples
+       << "_seed" << grid.grid_sample_seed
+       << "_samples" << grid.grid_random_samples
        << "_mintrades50pct_winrate80_sortinobest";
   return std::filesystem::path(config.output.training_results_dir) / name.str();
 }

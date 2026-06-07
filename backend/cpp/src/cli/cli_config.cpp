@@ -57,6 +57,13 @@ CliConfig parse_args(int argc, char** argv) {
 
   CliConfig config;
   config.approach = approach_type_from_string(first);
+  if (config.approach == ApproachType::BuyAndHold) {
+    config.approach_options = BuyAndHoldCliOptions{};
+  } else if (config.approach == ApproachType::DiscreteGrid) {
+    config.approach_options = DiscreteGridCliOptions{};
+  } else if (config.approach == ApproachType::Ridge) {
+    config.approach_options = RidgeCliOptions{};
+  }
 
   if (argc <= 2) {
     print_approach_help(config.approach);
@@ -91,8 +98,6 @@ CliConfig parse_args(int argc, char** argv) {
 
 BacktestRunConfig to_run_config(const CliConfig& options) {
   BacktestRunConfig config;
-  config.approach = options.approach;
-  config.strategy = options.strategy;
   config.data.csv_path = options.csv_path;
   config.data.symbol = options.symbol;
   config.output.json_path = options.output_path;
@@ -102,10 +107,25 @@ BacktestRunConfig to_run_config(const CliConfig& options) {
   config.execution.annualization = options.annualization;
   config.walk_forward.train_months = options.walk_train_months;
   config.walk_forward.test_months = options.walk_test_months;
-  if (options.approach == ApproachType::DiscreteGrid) {
-    config.discrete_search.strategy = discrete_strategy_type_from_family(options.strategy);
+  if (options.approach == ApproachType::BuyAndHold) {
+    const BuyAndHoldCliOptions& buy_and_hold_options = std::get<BuyAndHoldCliOptions>(options.approach_options);
+    config.approach_config = BuyAndHoldRunConfig{
+        buy_and_hold_strategy_from_family(options.strategy),
+        buy_and_hold_options.search_space,
+        buy_and_hold_options.search};
+  } else if (options.approach == ApproachType::DiscreteGrid) {
+    const DiscreteGridCliOptions& discrete_grid_options = std::get<DiscreteGridCliOptions>(options.approach_options);
+    config.approach_config = DiscreteGridRunConfig{
+        discrete_grid_strategy_from_family(options.strategy),
+        discrete_grid_options.search_space,
+        discrete_grid_options.search};
+  } else if (options.approach == ApproachType::Ridge) {
+    const RidgeCliOptions& ridge_options = std::get<RidgeCliOptions>(options.approach_options);
+    config.approach_config = RidgeRunConfig{
+        ridge_strategy_from_family(options.strategy),
+        ridge_options.search_space,
+        ridge_options.search};
   }
-  config.discrete_search.grid = options.grid;
   return config;
 }
 

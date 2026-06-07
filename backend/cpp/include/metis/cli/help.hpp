@@ -1,6 +1,6 @@
 #pragma once
 
-#include "metis/config/run_config.hpp"
+#include "metis/cli/approach.hpp"
 
 namespace metis {
 
