@@ -1,5 +1,6 @@
 #include "metis/reporting/json_writer.hpp"
 
+#include "metis/cli/approach.hpp"
 #include "metis/core/date.hpp"
 #include "metis/strategy/strategy_type.hpp"
 
@@ -51,68 +52,68 @@ void write_benchmark_json(std::ostringstream& out, const SimulationResult& item,
   out << indent << "}";
 }
 
-void write_config_json(std::ostringstream& out, const CliConfig& config) {
+void write_config_json(std::ostringstream& out, const BacktestRunConfig& config) {
   out << "  \"selection\": {\n";
   out << "    \"mode\": \"filtered-best-sortino\",\n";
   out << "    \"rank_by\": \"sortino\",\n";
-  out << "    \"minimum_training_trades\": " << std::max(1, config.walk_train_months / 2) << ",\n";
+  out << "    \"minimum_training_trades\": " << std::max(1, config.walk_forward.train_months / 2) << ",\n";
   out << "    \"minimum_training_win_rate\": 0.800000,\n";
   out << "    \"top_k\": 1\n";
   out << "  },\n";
   out << "  \"grid_sampling\": {\n";
-  out << "    \"sample_pct\": " << config.grid.grid_sample_pct << ",\n";
-  out << "    \"sample_seed\": " << config.grid.grid_sample_seed << ",\n";
-  out << "    \"random_samples\": " << config.grid.grid_random_samples << "\n";
+  out << "    \"sample_pct\": " << config.discrete_search.grid.grid_sample_pct << ",\n";
+  out << "    \"sample_seed\": " << config.discrete_search.grid.grid_sample_seed << ",\n";
+  out << "    \"random_samples\": " << config.discrete_search.grid.grid_random_samples << "\n";
   out << "  },\n";
   out << "  \"threshold_pct\": {\n";
-  out << "    \"min\": " << config.grid.x_min << ",\n";
-  out << "    \"max\": " << config.grid.x_max << ",\n";
-  out << "    \"step\": " << config.grid.x_step << "\n";
+  out << "    \"min\": " << config.discrete_search.grid.x_min << ",\n";
+  out << "    \"max\": " << config.discrete_search.grid.x_max << ",\n";
+  out << "    \"step\": " << config.discrete_search.grid.x_step << "\n";
   out << "  },\n";
   out << "  \"lookback_days\": {\n";
-  out << "    \"min\": " << config.grid.y_min << ",\n";
-  out << "    \"max\": " << config.grid.y_max << ",\n";
-  out << "    \"step\": " << config.grid.y_step << "\n";
+  out << "    \"min\": " << config.discrete_search.grid.y_min << ",\n";
+  out << "    \"max\": " << config.discrete_search.grid.y_max << ",\n";
+  out << "    \"step\": " << config.discrete_search.grid.y_step << "\n";
   out << "  },\n";
   out << "  \"hold_days\": {\n";
-  out << "    \"min\": " << config.grid.hold_days_min << ",\n";
-  out << "    \"max\": " << config.grid.hold_days_max << ",\n";
-  out << "    \"step\": " << config.grid.hold_days_step << "\n";
+  out << "    \"min\": " << config.discrete_search.grid.hold_days_min << ",\n";
+  out << "    \"max\": " << config.discrete_search.grid.hold_days_max << ",\n";
+  out << "    \"step\": " << config.discrete_search.grid.hold_days_step << "\n";
   out << "  },\n";
   out << "  \"regime\": {\n";
-  out << "    \"fast_lookback_min\": " << config.grid.fast_lookback_min << ",\n";
-  out << "    \"fast_lookback_max\": " << config.grid.fast_lookback_max << ",\n";
-  out << "    \"fast_lookback_step\": " << config.grid.fast_lookback_step << ",\n";
-  out << "    \"short_y_min\": " << config.grid.short_y_min << ",\n";
-  out << "    \"short_y_max\": " << config.grid.short_y_max << ",\n";
-  out << "    \"short_y_step\": " << config.grid.short_y_step << ",\n";
-  out << "    \"short_fast_lookback_min\": " << config.grid.short_fast_lookback_min << ",\n";
-  out << "    \"short_fast_lookback_max\": " << config.grid.short_fast_lookback_max << ",\n";
-  out << "    \"short_fast_lookback_step\": " << config.grid.short_fast_lookback_step << ",\n";
-  out << "    \"allow_short_min\": " << config.grid.allow_short_min << ",\n";
-  out << "    \"allow_short_max\": " << config.grid.allow_short_max << "\n";
+  out << "    \"fast_lookback_min\": " << config.discrete_search.grid.fast_lookback_min << ",\n";
+  out << "    \"fast_lookback_max\": " << config.discrete_search.grid.fast_lookback_max << ",\n";
+  out << "    \"fast_lookback_step\": " << config.discrete_search.grid.fast_lookback_step << ",\n";
+  out << "    \"short_y_min\": " << config.discrete_search.grid.short_y_min << ",\n";
+  out << "    \"short_y_max\": " << config.discrete_search.grid.short_y_max << ",\n";
+  out << "    \"short_y_step\": " << config.discrete_search.grid.short_y_step << ",\n";
+  out << "    \"short_fast_lookback_min\": " << config.discrete_search.grid.short_fast_lookback_min << ",\n";
+  out << "    \"short_fast_lookback_max\": " << config.discrete_search.grid.short_fast_lookback_max << ",\n";
+  out << "    \"short_fast_lookback_step\": " << config.discrete_search.grid.short_fast_lookback_step << ",\n";
+  out << "    \"allow_short_min\": " << config.discrete_search.grid.allow_short_min << ",\n";
+  out << "    \"allow_short_max\": " << config.discrete_search.grid.allow_short_max << "\n";
   out << "  },\n";
   out << "  \"risk_exits\": {\n";
-  out << "    \"take_profit_min\": " << config.grid.take_profit_min << ",\n";
-  out << "    \"take_profit_max\": " << config.grid.take_profit_max << ",\n";
-  out << "    \"take_profit_step\": " << config.grid.take_profit_step << ",\n";
-  out << "    \"stop_loss_min\": " << config.grid.stop_loss_min << ",\n";
-  out << "    \"stop_loss_max\": " << config.grid.stop_loss_max << ",\n";
-  out << "    \"stop_loss_step\": " << config.grid.stop_loss_step << ",\n";
-  out << "    \"trailing_stop_min\": " << config.grid.trailing_stop_min << ",\n";
-  out << "    \"trailing_stop_max\": " << config.grid.trailing_stop_max << ",\n";
-  out << "    \"trailing_stop_step\": " << config.grid.trailing_stop_step << ",\n";
-  out << "    \"regime_weak_exit_min\": " << config.grid.regime_weak_exit_min << ",\n";
-  out << "    \"regime_weak_exit_max\": " << config.grid.regime_weak_exit_max << ",\n";
-  out << "    \"volatility_lookback_min\": " << config.grid.volatility_lookback_min << ",\n";
-  out << "    \"volatility_lookback_max\": " << config.grid.volatility_lookback_max << ",\n";
-  out << "    \"volatility_lookback_step\": " << config.grid.volatility_lookback_step << ",\n";
-  out << "    \"target_volatility_min\": " << config.grid.target_volatility_min << ",\n";
-  out << "    \"target_volatility_max\": " << config.grid.target_volatility_max << ",\n";
-  out << "    \"target_volatility_step\": " << config.grid.target_volatility_step << ",\n";
-  out << "    \"max_position_pct_min\": " << config.grid.max_position_pct_min << ",\n";
-  out << "    \"max_position_pct_max\": " << config.grid.max_position_pct_max << ",\n";
-  out << "    \"max_position_pct_step\": " << config.grid.max_position_pct_step << "\n";
+  out << "    \"take_profit_min\": " << config.discrete_search.grid.take_profit_min << ",\n";
+  out << "    \"take_profit_max\": " << config.discrete_search.grid.take_profit_max << ",\n";
+  out << "    \"take_profit_step\": " << config.discrete_search.grid.take_profit_step << ",\n";
+  out << "    \"stop_loss_min\": " << config.discrete_search.grid.stop_loss_min << ",\n";
+  out << "    \"stop_loss_max\": " << config.discrete_search.grid.stop_loss_max << ",\n";
+  out << "    \"stop_loss_step\": " << config.discrete_search.grid.stop_loss_step << ",\n";
+  out << "    \"trailing_stop_min\": " << config.discrete_search.grid.trailing_stop_min << ",\n";
+  out << "    \"trailing_stop_max\": " << config.discrete_search.grid.trailing_stop_max << ",\n";
+  out << "    \"trailing_stop_step\": " << config.discrete_search.grid.trailing_stop_step << ",\n";
+  out << "    \"regime_weak_exit_min\": " << config.discrete_search.grid.regime_weak_exit_min << ",\n";
+  out << "    \"regime_weak_exit_max\": " << config.discrete_search.grid.regime_weak_exit_max << ",\n";
+  out << "    \"volatility_lookback_min\": " << config.discrete_search.grid.volatility_lookback_min << ",\n";
+  out << "    \"volatility_lookback_max\": " << config.discrete_search.grid.volatility_lookback_max << ",\n";
+  out << "    \"volatility_lookback_step\": " << config.discrete_search.grid.volatility_lookback_step << ",\n";
+  out << "    \"target_volatility_min\": " << config.discrete_search.grid.target_volatility_min << ",\n";
+  out << "    \"target_volatility_max\": " << config.discrete_search.grid.target_volatility_max << ",\n";
+  out << "    \"target_volatility_step\": " << config.discrete_search.grid.target_volatility_step << ",\n";
+  out << "    \"max_position_pct_min\": " << config.discrete_search.grid.max_position_pct_min << ",\n";
+  out << "    \"max_position_pct_max\": " << config.discrete_search.grid.max_position_pct_max << ",\n";
+  out << "    \"max_position_pct_step\": " << config.discrete_search.grid.max_position_pct_step << "\n";
   out << "  },\n";
 }
 
@@ -182,21 +183,22 @@ std::string to_json(
     const SimulationResult& best,
     const SimulationResult& buy_and_hold,
     size_t bars,
-    const CliConfig& config) {
+    const BacktestRunConfig& config) {
   std::ostringstream out;
   out << std::fixed << std::setprecision(6);
 
   out << "{\n";
-  out << "  \"symbol\": \"" << json_escape(config.symbol) << "\",\n";
-  out << "  \"mode\": \"" << json_escape(config.mode) << "\",\n";
-  out << "  \"strategy\": \"" << strategy_type_to_string(config.strategy) << "\",\n";
+  out << "  \"symbol\": \"" << json_escape(config.data.symbol) << "\",\n";
+  out << "  \"mode\": \"walk-forward\",\n";
+  out << "  \"approach\": \"" << approach_type_to_string(config.approach) << "\",\n";
+  out << "  \"strategy\": \"" << strategy_family_to_string(config.strategy) << "\",\n";
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
-  out << "  \"initial_equity\": " << config.initial_equity << ",\n";
-  out << "  \"bars_per_year\": " << config.annualization.bars_per_year << ",\n";
+  out << "  \"initial_equity\": " << config.execution.initial_equity << ",\n";
+  out << "  \"bars_per_year\": " << config.execution.annualization.bars_per_year << ",\n";
   out << "  \"transaction_costs\": {\n";
-  out << "    \"fixed_per_order\": " << config.costs.fixed_per_order << ",\n";
-  out << "    \"variable_rate\": " << config.costs.variable_rate << "\n";
+  out << "    \"fixed_per_order\": " << config.execution.costs.fixed_per_order << ",\n";
+  out << "    \"variable_rate\": " << config.execution.costs.variable_rate << "\n";
   out << "  },\n";
   write_config_json(out, config);
   out << "  \"buy_and_hold\": ";
@@ -226,26 +228,27 @@ std::string to_walk_forward_json(
     const SimulationResult& buy_and_hold,
     const std::vector<WalkForwardPeriod>& periods,
     size_t bars,
-    const CliConfig& config) {
+    const BacktestRunConfig& config) {
   std::ostringstream out;
   out << std::fixed << std::setprecision(6);
 
   out << "{\n";
-  out << "  \"symbol\": \"" << json_escape(config.symbol) << "\",\n";
-  out << "  \"mode\": \"" << json_escape(config.mode) << "\",\n";
-  out << "  \"strategy\": \"" << strategy_type_to_string(config.strategy) << "\",\n";
+  out << "  \"symbol\": \"" << json_escape(config.data.symbol) << "\",\n";
+  out << "  \"mode\": \"walk-forward\",\n";
+  out << "  \"approach\": \"" << approach_type_to_string(config.approach) << "\",\n";
+  out << "  \"strategy\": \"" << strategy_family_to_string(config.strategy) << "\",\n";
   out << "  \"generated_at\": \"" << now_utc_iso8601() << "\",\n";
   out << "  \"bars\": " << bars << ",\n";
-  out << "  \"initial_equity\": " << config.initial_equity << ",\n";
-  out << "  \"bars_per_year\": " << config.annualization.bars_per_year << ",\n";
+  out << "  \"initial_equity\": " << config.execution.initial_equity << ",\n";
+  out << "  \"bars_per_year\": " << config.execution.annualization.bars_per_year << ",\n";
   out << "  \"transaction_costs\": {\n";
-  out << "    \"fixed_per_order\": " << config.costs.fixed_per_order << ",\n";
-  out << "    \"variable_rate\": " << config.costs.variable_rate << "\n";
+  out << "    \"fixed_per_order\": " << config.execution.costs.fixed_per_order << ",\n";
+  out << "    \"variable_rate\": " << config.execution.costs.variable_rate << "\n";
   out << "  },\n";
   write_config_json(out, config);
   out << "  \"walk_forward\": {\n";
-  out << "    \"train_months\": " << config.walk_train_months << ",\n";
-  out << "    \"test_months\": " << config.walk_test_months << ",\n";
+  out << "    \"train_months\": " << config.walk_forward.train_months << ",\n";
+  out << "    \"test_months\": " << config.walk_forward.test_months << ",\n";
   out << "    \"periods\": " << periods.size() << "\n";
   out << "  },\n";
   out << "  \"buy_and_hold\": ";

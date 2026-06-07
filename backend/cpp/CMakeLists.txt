@@ -12,7 +12,13 @@ add_executable(metis_backtester
   src/backtest/backtest.cpp
   src/backtest/metrics.cpp
   src/backtest/walk_forward.cpp
+  src/cli/approach/buy_and_hold_cli.cpp
+  src/cli/approach/discrete_grid_cli.cpp
+  src/cli/approach/ridge_cli.cpp
+  src/cli/approach.cpp
   src/cli/cli_config.cpp
+  src/cli/help.cpp
+  src/cli/parse_common.cpp
   src/core/date.cpp
   src/core/file_io.cpp
   src/data/csv_loader.cpp

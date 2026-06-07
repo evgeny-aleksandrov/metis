@@ -1,7 +1,8 @@
 #include "metis/analytics/indicators.hpp"
 #include "metis/backtest/metrics.hpp"
-#include "metis/backtest/optimization.hpp"
 #include "metis/backtest/simulation.hpp"
+#include "metis/optimization/discrete_grid_search.hpp"
+#include "metis/strategy/strategy.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -42,19 +43,16 @@ double position_fraction(
 // `const std::vector<Candle>&` means "read-only reference" (avoid copying big arrays).
 SimulationResult run_simulation(
     const std::vector<Candle>& prices,
-    const StrategyParams& params,
+    const Strategy& strategy,
     double initial_equity,
     const TransactionCosts& costs,
     const Annualization& annualization) {
   SimulationResult result;
+  const StrategyParams& params = strategy.params();
   result.params = params;
   result.final_equity = initial_equity;
 
-  int required_lookback =
-      params.strategy == StrategyType::Regime ? std::max(params.lookback_days, params.fast_lookback_days) : params.lookback_days;
-  if (params.strategy == StrategyType::Regime && params.allow_short) {
-    required_lookback = std::max(required_lookback, std::max(params.short_lookback_days, params.short_fast_lookback_days));
-  }
+  int required_lookback = strategy.required_lookback();
   if (params.volatility_lookback_days > 0) {
     required_lookback = std::max(required_lookback, params.volatility_lookback_days);
   }
@@ -109,19 +107,8 @@ SimulationResult run_simulation(
            (position_direction < 0 && lowest_price_since_entry > 0.0 &&
             close >= lowest_price_since_entry * (1.0 + params.trailing_stop_pct)));
       const bool stop_loss_exit = params.stop_loss_pct > 0.0 && trade_return <= -params.stop_loss_pct;
-      const bool timed_exit = params.strategy != StrategyType::Regime && days_left <= 0;
-      bool regime_weakness_exit = false;
-      if (params.strategy == StrategyType::Regime && params.exit_on_regime_weakness) {
-        if (position_direction > 0) {
-          const double fast_now = simple_moving_average(prices, index, params.fast_lookback_days);
-          const double slow_now = simple_moving_average(prices, index, params.lookback_days);
-          regime_weakness_exit = fast_now > 0.0 && slow_now > 0.0 && fast_now < slow_now;
-        } else if (position_direction < 0) {
-          const double fast_now = simple_moving_average(prices, index, params.short_fast_lookback_days);
-          const double slow_now = simple_moving_average(prices, index, params.short_lookback_days);
-          regime_weakness_exit = fast_now > 0.0 && slow_now > 0.0 && fast_now > slow_now;
-        }
-      }
+      const bool timed_exit = strategy.uses_timed_exit() && days_left <= 0;
+      const bool regime_weakness_exit = strategy.should_exit_on_signal_weakness(prices, index, position_direction);
       if (timed_exit || take_profit_exit || trailing_stop_exit || stop_loss_exit || regime_weakness_exit) {
         const double exit_value = shares * close;
         const double exit_cost = order_cost(exit_value, costs);
@@ -153,43 +140,16 @@ SimulationResult run_simulation(
 
     const bool has_lookback = index >= static_cast<size_t>(required_lookback);
     if (shares == 0.0 && has_lookback) {
-      bool should_enter = false;
       int entry_direction = 0;
-      if (params.strategy == StrategyType::Regime) {
-        const double fast_now = simple_moving_average(prices, index, params.fast_lookback_days);
-        const double slow_now = simple_moving_average(prices, index, params.lookback_days);
-        const double fast_prev = simple_moving_average(prices, index - 1, params.fast_lookback_days);
-        const double slow_prev = simple_moving_average(prices, index - 1, params.lookback_days);
-        should_enter = fast_prev > 0.0 && slow_prev > 0.0 && fast_now > 0.0 && slow_now > 0.0 &&
-                       fast_prev <= slow_prev && fast_now > slow_now;
-        if (should_enter) {
-          entry_signal_quality = (fast_now - slow_now) / slow_now;
-          entry_direction = 1;
-        } else if (params.allow_short) {
-          const double short_fast_now = simple_moving_average(prices, index, params.short_fast_lookback_days);
-          const double short_slow_now = simple_moving_average(prices, index, params.short_lookback_days);
-          const double short_fast_prev = simple_moving_average(prices, index - 1, params.short_fast_lookback_days);
-          const double short_slow_prev = simple_moving_average(prices, index - 1, params.short_lookback_days);
-          should_enter = short_fast_prev > 0.0 && short_slow_prev > 0.0 && short_fast_now > 0.0 &&
-                         short_slow_now > 0.0 && short_fast_prev >= short_slow_prev &&
-                         short_fast_now < short_slow_now;
-          if (should_enter) {
-            entry_signal_quality = (short_slow_now - short_fast_now) / short_slow_now;
-            entry_direction = -1;
-          }
-        }
-      } else {
-        const double lookback_close = prices[index - static_cast<size_t>(params.lookback_days)].close;
-        if (lookback_close > 0.0) {
-          const double diff = (close / lookback_close) - 1.0;
-          const double threshold = std::abs(params.diff_pct);
-          should_enter = params.strategy == StrategyType::Drop ? diff <= -threshold : diff >= threshold;
-          if (should_enter) {
-            entry_signal_quality = diff;
-            entry_direction = 1;
-          }
-        }
+      const PortfolioState state{cash, position_direction};
+      const Signal signal = strategy.signal(prices, index, state);
+      const bool should_enter = signal.direction == Direction::Long || signal.direction == Direction::Short;
+      if (signal.direction == Direction::Long) {
+        entry_direction = 1;
+      } else if (signal.direction == Direction::Short) {
+        entry_direction = -1;
       }
+      entry_signal_quality = signal.confidence;
       if (should_enter) {
           const double equity = cash;
           const double fraction = position_fraction(prices, index, params, annualization);
@@ -265,6 +225,13 @@ SimulationResult run_simulation(
   return result;
 }
 
+SimulationResult run_simulation(
+    const std::vector<Candle>& prices,
+    const Strategy& strategy,
+    const ExecutionConfig& execution) {
+  return run_simulation(prices, strategy, execution.initial_equity, execution.costs, execution.annualization);
+}
+
 SimulationResult run_buy_and_hold(
     const std::vector<Candle>& prices,
     double initial_equity,
@@ -328,13 +295,19 @@ SimulationResult run_buy_and_hold(
 }
 
 // Brute-force parameter sweep (nested loops like Python `for x ...: for y ...:`).
+DiscreteGridSearchOptimizer::DiscreteGridSearchOptimizer(DiscreteStrategySearchConfig config) : config_(config) {}
+
+std::vector<SimulationResult> DiscreteGridSearchOptimizer::evaluate(
+    const std::vector<Candle>& prices,
+    const ExecutionConfig& execution) const {
+  return run_grid_search(prices, config_.grid, config_.strategy, execution);
+}
+
 std::vector<SimulationResult> run_grid_search(
     const std::vector<Candle>& prices,
     const GridSearchConfig& config,
     StrategyType strategy,
-    double initial_equity,
-    const TransactionCosts& costs,
-    const Annualization& annualization) {
+    const ExecutionConfig& execution) {
   std::vector<SimulationResult> results;
   std::mt19937 random_engine(config.grid_sample_seed);
   std::uniform_real_distribution<double> sample_distribution(0.0, 1.0);
@@ -419,7 +392,8 @@ std::vector<SimulationResult> run_grid_search(
         params.target_volatility = pick_double(target_volatility_values);
         params.max_position_pct = pick_double(max_position_values);
 
-        results.push_back(run_simulation(prices, params, initial_equity, costs, annualization));
+        const DiscreteStrategy candidate(params);
+        results.push_back(run_simulation(prices, candidate, execution));
       }
       return results;
     }
@@ -464,7 +438,8 @@ std::vector<SimulationResult> run_grid_search(
                             params.max_position_pct = max_position_pct;
 
                             if (should_evaluate_candidate()) {
-                              results.push_back(run_simulation(prices, params, initial_equity, costs, annualization));
+                              const DiscreteStrategy candidate(params);
+                              results.push_back(run_simulation(prices, candidate, execution));
                             }
                           }
                         }
@@ -497,7 +472,8 @@ std::vector<SimulationResult> run_grid_search(
               params.trailing_stop_pct = trailing_stop;
 
               if (should_evaluate_candidate()) {
-                results.push_back(run_simulation(prices, params, initial_equity, costs, annualization));
+                const DiscreteStrategy candidate(params);
+                results.push_back(run_simulation(prices, candidate, execution));
               }
             }
           }

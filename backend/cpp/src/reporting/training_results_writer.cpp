@@ -41,17 +41,17 @@ std::string csv_escape(const std::string& value) {
   return escaped;
 }
 
-std::filesystem::path training_results_run_dir(const CliConfig& config, const std::string& run_id) {
+std::filesystem::path training_results_run_dir(const BacktestRunConfig& config, const std::string& run_id) {
   std::ostringstream name;
   name << run_id
-       << "_" << sanitize_path_part(config.symbol)
-       << "_" << strategy_type_to_string(config.strategy)
-       << "_train" << config.walk_train_months << "m"
-       << "_test" << config.walk_test_months << "m"
-       << "_seed" << config.grid.grid_sample_seed
-       << "_samples" << config.grid.grid_random_samples
+       << "_" << sanitize_path_part(config.data.symbol)
+       << "_" << strategy_type_to_string(config.discrete_search.strategy)
+       << "_train" << config.walk_forward.train_months << "m"
+       << "_test" << config.walk_forward.test_months << "m"
+       << "_seed" << config.discrete_search.grid.grid_sample_seed
+       << "_samples" << config.discrete_search.grid.grid_random_samples
        << "_mintrades50pct_winrate80_sortinobest";
-  return std::filesystem::path(config.training_results_dir) / name.str();
+  return std::filesystem::path(config.output.training_results_dir) / name.str();
 }
 
 void write_training_results_csv(

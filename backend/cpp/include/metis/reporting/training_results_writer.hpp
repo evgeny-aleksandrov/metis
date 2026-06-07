@@ -1,6 +1,6 @@
 #pragma once
 
-#include "metis/cli/cli_config.hpp"
+#include "metis/config/run_config.hpp"
 #include "metis/types.hpp"
 
 #include <filesystem>
@@ -11,7 +11,7 @@ namespace metis {
 
 std::string sanitize_path_part(const std::string& value);
 std::string csv_escape(const std::string& value);
-std::filesystem::path training_results_run_dir(const CliConfig& config, const std::string& run_id);
+std::filesystem::path training_results_run_dir(const BacktestRunConfig& config, const std::string& run_id);
 void write_training_results_csv(
     const std::filesystem::path& run_dir,
     size_t period_index,

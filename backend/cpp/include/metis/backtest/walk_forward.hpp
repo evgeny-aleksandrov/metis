@@ -1,6 +1,7 @@
 #pragma once
 
-#include "metis/cli/cli_config.hpp"
+#include "metis/config/run_config.hpp"
+#include "metis/optimization/optimizer.hpp"
 #include "metis/types.hpp"
 
 #include <string>
@@ -19,7 +20,8 @@ struct WalkForwardPeriod {
 
 SimulationResult run_walk_forward(
     const std::vector<Candle>& prices,
-    const CliConfig& config,
+    const BacktestRunConfig& config,
+    const Optimizer& optimizer,
     std::vector<WalkForwardPeriod>& periods);
 
 }  // namespace metis
