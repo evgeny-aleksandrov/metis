@@ -12,12 +12,6 @@ enum class BuyAndHoldStrategy {
   ScheduledBuy
 };
 
-enum class DiscreteGridStrategy {
-  Drop,
-  Gain,
-  Regime
-};
-
 enum class RidgeStrategy {
   Directional,
   LongShort,
@@ -112,8 +106,6 @@ struct BacktestRunConfig {
   ApproachRunConfig approach_config = DiscreteGridRunConfig{};
 };
 
-GridSearchConfig grid_search_config_from_discrete_grid_config(const DiscreteGridRunConfig& config);
-StrategyType strategy_type_from_discrete_grid_strategy(DiscreteGridStrategy strategy);
 std::string approach_name(const BacktestRunConfig& config);
 std::string strategy_name(const BacktestRunConfig& config);
 

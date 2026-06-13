@@ -4,24 +4,24 @@
 
 namespace metis {
 
-StrategyType strategy_type_from_string(const std::string& value) {
+DiscreteGridStrategy discrete_grid_strategy_from_string(const std::string& value) {
   if (value == "drop" || value == "dip") {
-    return StrategyType::Drop;
+    return DiscreteGridStrategy::Drop;
   }
   if (value == "gain" || value == "momentum") {
-    return StrategyType::Gain;
+    return DiscreteGridStrategy::Gain;
   }
   if (value == "regime" || value == "trend") {
-    return StrategyType::Regime;
+    return DiscreteGridStrategy::Regime;
   }
   throw std::runtime_error("Unknown strategy type: " + value + ". Use 'drop', 'gain', or 'regime'.");
 }
 
-std::string strategy_type_to_string(StrategyType strategy) {
-  if (strategy == StrategyType::Gain) {
+std::string discrete_grid_strategy_to_string(DiscreteGridStrategy strategy) {
+  if (strategy == DiscreteGridStrategy::Gain) {
     return "gain";
   }
-  if (strategy == StrategyType::Regime) {
+  if (strategy == DiscreteGridStrategy::Regime) {
     return "regime";
   }
   return "drop";

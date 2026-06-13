@@ -1,28 +1,22 @@
 #include "metis/backtest/walk_forward.hpp"
 
 #include "metis/backtest/metrics.hpp"
-#include "metis/backtest/simulation.hpp"
+#include "metis/backtest/training_candidate_selector.hpp"
+#include "metis/backtest/walk_forward_splitter.hpp"
 #include "metis/core/date.hpp"
 #include "metis/reporting/training_results_writer.hpp"
-#include "metis/strategy/strategy.hpp"
 
 #include <algorithm>
 #include <filesystem>
-#include <sstream>
 #include <stdexcept>
-#include <variant>
 
 namespace metis {
 namespace {
 
-std::vector<Candle> slice_prices(const std::vector<Candle>& prices, const std::string& start, const std::string& end) {
-  std::vector<Candle> slice;
-  for (const Candle& candle : prices) {
-    if (candle.date >= start && candle.date < end) {
-      slice.push_back(candle);
-    }
-  }
-  return slice;
+void append_test_result(SimulationResult& combined, const SimulationResult& test_result) {
+  combined.equity_curve.insert(combined.equity_curve.end(), test_result.equity_curve.begin(), test_result.equity_curve.end());
+  combined.trades.insert(combined.trades.end(), test_result.trades.begin(), test_result.trades.end());
+  combined.metrics.trades += test_result.metrics.trades;
 }
 
 }  // namespace
@@ -31,74 +25,53 @@ SimulationResult run_walk_forward(
     const std::vector<Candle>& prices,
     const BacktestRunConfig& config,
     const Optimizer& optimizer,
+    const WalkForwardCandidateRunner& candidate_runner,
     std::vector<WalkForwardPeriod>& periods) {
   if (prices.empty()) {
     throw std::runtime_error("Cannot run walk-forward without prices.");
   }
 
   SimulationResult combined;
-  const DiscreteGridRunConfig& discrete_grid_config = std::get<DiscreteGridRunConfig>(config.approach_config);
-  combined.params.strategy = strategy_type_from_discrete_grid_strategy(discrete_grid_config.strategy);
   combined.final_equity = config.execution.initial_equity;
   double current_equity = config.execution.initial_equity;
   size_t test_bars = 0;
   const std::string training_results_run_id = now_utc_compact();
   const std::filesystem::path training_results_dir = training_results_run_dir(config, training_results_run_id);
+  const std::vector<WalkForwardWindow> windows = WalkForwardSplitter{}.split(prices, config.walk_forward);
+  const int minimum_training_trades = std::max(1, config.walk_forward.train_months / 2);
+  const TrainingCandidateSelector selector(minimum_training_trades, 0.80);
 
-  std::string test_start = add_months(prices.front().date, config.walk_forward.train_months);
-  while (test_start < prices.back().date) {
-    const std::string train_start = add_months(test_start, -config.walk_forward.train_months);
-    const std::string test_end = add_months(test_start, config.walk_forward.test_months);
-    if (test_end > prices.back().date) {
-      break;
-    }
-    const std::vector<Candle> training_prices = slice_prices(prices, train_start, test_start);
-    const std::vector<Candle> test_prices = slice_prices(prices, test_start, test_end);
-
-    if (training_prices.size() < 30 || test_prices.size() < 30) {
-      break;
-    }
-
-    std::vector<SimulationResult> train_results = optimizer.evaluate(training_prices, config.execution);
-    if (train_results.empty()) {
-      throw std::runtime_error("No training results were produced. Check that fast lookback values are below slow lookback values.");
-    }
-    const int minimum_training_trades = std::max(1, config.walk_forward.train_months / 2);
-    std::vector<SimulationResult> eligible_train_results = filter_training_candidates(train_results, minimum_training_trades, 0.80);
-    if (eligible_train_results.empty()) {
-      std::ostringstream message;
-      message << "No eligible training results for "
-              << training_prices.front().date << ".." << training_prices.back().date
-              << ". Required at least " << minimum_training_trades
-              << " trades and win_rate >= 0.80.";
-      throw std::runtime_error(message.str());
-    }
-    sort_results_by_sortino(eligible_train_results);
+  for (const WalkForwardWindow& window : windows) {
+    const std::vector<SimulationResult> train_results = optimizer.evaluate(window.training_prices, config.execution);
+    const SelectedTrainingCandidate selected = selector.select(train_results, window);
     if (!config.output.training_results_dir.empty()) {
       write_training_results_csv(
           training_results_dir,
           periods.size() + 1,
-          training_prices.front().date,
-          training_prices.back().date,
-          test_prices.front().date,
-          test_prices.back().date,
-          eligible_train_results);
+          window.train_start,
+          window.train_end,
+          window.test_start,
+          window.test_end,
+          selected.eligible_results);
     }
-    const StrategyParams selected_params = eligible_train_results.front().params;
-    const DiscreteStrategy selected_strategy(selected_params);
+
+    const StrategyParams selected_params = selected.result.params;
+    combined.params = selected_params;
     const SimulationResult training_selection =
-        run_simulation(training_prices, selected_strategy, config.execution);
-    SimulationResult test_result =
-        run_simulation(test_prices, selected_strategy, current_equity, config.execution.costs, config.execution.annualization);
+        candidate_runner.run_training_selection(window, selected_params, config.execution);
+    const SimulationResult test_result =
+        candidate_runner.run_test(window, selected_params, current_equity, config.execution);
 
     current_equity = test_result.final_equity;
     test_bars += test_result.equity_curve.size();
-    combined.equity_curve.insert(combined.equity_curve.end(), test_result.equity_curve.begin(), test_result.equity_curve.end());
-    combined.trades.insert(combined.trades.end(), test_result.trades.begin(), test_result.trades.end());
-    combined.metrics.trades += test_result.metrics.trades;
-    periods.push_back({training_prices.front().date, training_prices.back().date, test_prices.front().date, test_prices.back().date, training_selection, test_result});
-
-    test_start = test_end;
+    append_test_result(combined, test_result);
+    periods.push_back({
+        window.train_start,
+        window.train_end,
+        window.test_start,
+        window.test_end,
+        training_selection,
+        test_result});
   }
 
   if (periods.empty()) {

@@ -44,15 +44,14 @@ std::string csv_escape(const std::string& value) {
 
 std::filesystem::path training_results_run_dir(const BacktestRunConfig& config, const std::string& run_id) {
   const DiscreteGridRunConfig& discrete_grid_config = std::get<DiscreteGridRunConfig>(config.approach_config);
-  const GridSearchConfig grid = grid_search_config_from_discrete_grid_config(discrete_grid_config);
   std::ostringstream name;
   name << run_id
        << "_" << sanitize_path_part(config.data.symbol)
-       << "_" << strategy_type_to_string(strategy_type_from_discrete_grid_strategy(discrete_grid_config.strategy))
+       << "_" << discrete_grid_strategy_to_string(discrete_grid_config.strategy)
        << "_train" << config.walk_forward.train_months << "m"
        << "_test" << config.walk_forward.test_months << "m"
-       << "_seed" << grid.grid_sample_seed
-       << "_samples" << grid.grid_random_samples
+       << "_seed" << discrete_grid_config.search.seed
+       << "_samples" << discrete_grid_config.search.random_samples
        << "_mintrades50pct_winrate80_sortinobest";
   return std::filesystem::path(config.output.training_results_dir) / name.str();
 }
@@ -86,7 +85,7 @@ void write_training_results_csv(
         << csv_escape(train_end) << ","
         << csv_escape(test_start) << ","
         << csv_escape(test_end) << ","
-        << csv_escape(strategy_type_to_string(item.params.strategy)) << ","
+        << csv_escape(discrete_grid_strategy_to_string(item.params.strategy)) << ","
         << item.params.diff_pct << ","
         << item.params.lookback_days << ","
         << item.params.fast_lookback_days << ","

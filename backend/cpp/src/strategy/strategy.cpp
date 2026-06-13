@@ -12,7 +12,7 @@ namespace metis {
 DiscreteStrategy::DiscreteStrategy(StrategyParams params) : params_(params) {}
 
 std::string DiscreteStrategy::name() const {
-  return strategy_type_to_string(params_.strategy);
+  return discrete_grid_strategy_to_string(params_.strategy);
 }
 
 const StrategyParams& DiscreteStrategy::params() const {
@@ -21,22 +21,22 @@ const StrategyParams& DiscreteStrategy::params() const {
 
 int DiscreteStrategy::required_lookback() const {
   int lookback =
-      params_.strategy == StrategyType::Regime ? std::max(params_.lookback_days, params_.fast_lookback_days) : params_.lookback_days;
-  if (params_.strategy == StrategyType::Regime && params_.allow_short) {
+      params_.strategy == DiscreteGridStrategy::Regime ? std::max(params_.lookback_days, params_.fast_lookback_days) : params_.lookback_days;
+  if (params_.strategy == DiscreteGridStrategy::Regime && params_.allow_short) {
     lookback = std::max(lookback, std::max(params_.short_lookback_days, params_.short_fast_lookback_days));
   }
   return lookback;
 }
 
 bool DiscreteStrategy::uses_timed_exit() const {
-  return params_.strategy != StrategyType::Regime;
+  return params_.strategy != DiscreteGridStrategy::Regime;
 }
 
 bool DiscreteStrategy::should_exit_on_signal_weakness(
     const std::vector<Candle>& prices,
     size_t index,
     int position_direction) const {
-  if (params_.strategy != StrategyType::Regime || !params_.exit_on_regime_weakness) {
+  if (params_.strategy != DiscreteGridStrategy::Regime || !params_.exit_on_regime_weakness) {
     return false;
   }
   if (position_direction > 0) {
@@ -59,7 +59,7 @@ Signal DiscreteStrategy::signal(
   Signal result;
   result.target_position_pct = std::max(0.0, params_.max_position_pct);
 
-  if (params_.strategy == StrategyType::Regime) {
+  if (params_.strategy == DiscreteGridStrategy::Regime) {
     const double fast_now = simple_moving_average(prices, index, params_.fast_lookback_days);
     const double slow_now = simple_moving_average(prices, index, params_.lookback_days);
     const double fast_prev = index > 0 ? simple_moving_average(prices, index - 1, params_.fast_lookback_days) : 0.0;
@@ -95,10 +95,10 @@ Signal DiscreteStrategy::signal(
   }
   const double diff = (prices[index].close / previous) - 1.0;
   const double threshold = std::abs(params_.diff_pct);
-  if (params_.strategy == StrategyType::Drop && diff <= -threshold) {
+  if (params_.strategy == DiscreteGridStrategy::Drop && diff <= -threshold) {
     result.direction = Direction::Long;
     result.confidence = std::abs(diff);
-  } else if (params_.strategy == StrategyType::Gain && diff >= threshold) {
+  } else if (params_.strategy == DiscreteGridStrategy::Gain && diff >= threshold) {
     result.direction = Direction::Long;
     result.confidence = std::abs(diff);
   }

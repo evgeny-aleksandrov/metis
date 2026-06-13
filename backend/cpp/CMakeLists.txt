@@ -13,9 +13,13 @@ add_executable(metis_backtester
   src/app/approach/buy_and_hold_runner.cpp
   src/app/approach/discrete_grid_runner.cpp
   src/app/approach/ridge_runner.cpp
-  src/backtest/backtest.cpp
   src/backtest/metrics.cpp
+  src/backtest/buy_and_hold_simulation.cpp
+  src/backtest/execution_accounting.cpp
+  src/backtest/simulation.cpp
+  src/backtest/training_candidate_selector.cpp
   src/backtest/walk_forward.cpp
+  src/backtest/walk_forward_splitter.cpp
   src/cli/approach/buy_and_hold_cli.cpp
   src/cli/approach/discrete_grid_cli.cpp
   src/cli/approach/ridge_cli.cpp
@@ -28,6 +32,7 @@ add_executable(metis_backtester
   src/core/file_io.cpp
   src/data/csv_loader.cpp
   src/model/ridge_regression.cpp
+  src/optimization/discrete_grid_search.cpp
   src/reporting/console_summary.cpp
   src/reporting/json_writer.cpp
   src/reporting/training_results_writer.cpp

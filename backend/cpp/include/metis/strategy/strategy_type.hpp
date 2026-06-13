@@ -6,7 +6,7 @@
 
 namespace metis {
 
-StrategyType strategy_type_from_string(const std::string& value);
-std::string strategy_type_to_string(StrategyType strategy);
+DiscreteGridStrategy discrete_grid_strategy_from_string(const std::string& value);
+std::string discrete_grid_strategy_to_string(DiscreteGridStrategy strategy);
 
 }  // namespace metis

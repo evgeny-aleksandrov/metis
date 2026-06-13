@@ -24,9 +24,13 @@ else
     "$repo_root/backend/cpp/src/app/approach/buy_and_hold_runner.cpp" \
     "$repo_root/backend/cpp/src/app/approach/discrete_grid_runner.cpp" \
     "$repo_root/backend/cpp/src/app/approach/ridge_runner.cpp" \
-    "$repo_root/backend/cpp/src/backtest/backtest.cpp" \
     "$repo_root/backend/cpp/src/backtest/metrics.cpp" \
+    "$repo_root/backend/cpp/src/backtest/buy_and_hold_simulation.cpp" \
+    "$repo_root/backend/cpp/src/backtest/execution_accounting.cpp" \
+    "$repo_root/backend/cpp/src/backtest/simulation.cpp" \
+    "$repo_root/backend/cpp/src/backtest/training_candidate_selector.cpp" \
     "$repo_root/backend/cpp/src/backtest/walk_forward.cpp" \
+    "$repo_root/backend/cpp/src/backtest/walk_forward_splitter.cpp" \
     "$repo_root/backend/cpp/src/cli/approach/buy_and_hold_cli.cpp" \
     "$repo_root/backend/cpp/src/cli/approach/discrete_grid_cli.cpp" \
     "$repo_root/backend/cpp/src/cli/approach/ridge_cli.cpp" \
@@ -39,6 +43,7 @@ else
     "$repo_root/backend/cpp/src/core/file_io.cpp" \
     "$repo_root/backend/cpp/src/data/csv_loader.cpp" \
     "$repo_root/backend/cpp/src/model/ridge_regression.cpp" \
+    "$repo_root/backend/cpp/src/optimization/discrete_grid_search.cpp" \
     "$repo_root/backend/cpp/src/reporting/console_summary.cpp" \
     "$repo_root/backend/cpp/src/reporting/json_writer.cpp" \
     "$repo_root/backend/cpp/src/reporting/training_results_writer.cpp" \

@@ -178,6 +178,9 @@ void validate_discrete_grid_config(const CliConfig& config) {
   if (options.search.random_samples < 0) {
     throw std::runtime_error("Grid random samples cannot be negative.");
   }
+  if (config.strategy == StrategyFamily::Regime && options.search.random_samples <= 0) {
+    throw std::runtime_error("Regime grid search requires --grid-random-samples > 0.");
+  }
   if (range_min_exceeds_max(search_space.threshold_pct) ||
       range_min_exceeds_max(search_space.lookback_days) ||
       range_min_exceeds_max(search_space.fast_lookback_days) ||

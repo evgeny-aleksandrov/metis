@@ -10,14 +10,14 @@ struct Candle {
   double close = 0.0;
 };
 
-enum class StrategyType {
+enum class DiscreteGridStrategy {
   Drop,
   Gain,
   Regime
 };
 
 struct StrategyParams {
-  StrategyType strategy = StrategyType::Drop;
+  DiscreteGridStrategy strategy = DiscreteGridStrategy::Drop;
   double diff_pct = 0.03;
   int lookback_days = 5;
   int fast_lookback_days = 2;
@@ -77,52 +77,6 @@ struct SimulationResult {
   double final_equity = 0.0;
   std::vector<EquityPoint> equity_curve;
   std::vector<Trade> trades;
-};
-
-struct GridSearchConfig {
-  double x_min = 0.01;
-  double x_max = 0.10;
-  double x_step = 0.01;
-  int y_min = 2;
-  int y_max = 20;
-  int y_step = 1;
-  int fast_lookback_min = 2;
-  int fast_lookback_max = 10;
-  int fast_lookback_step = 1;
-  int short_y_min = 0;
-  int short_y_max = 0;
-  int short_y_step = 1;
-  int short_fast_lookback_min = 0;
-  int short_fast_lookback_max = 0;
-  int short_fast_lookback_step = 1;
-  int hold_days_min = 10;
-  int hold_days_max = 60;
-  int hold_days_step = 5;
-  double take_profit_min = 0.0;
-  double take_profit_max = 0.0;
-  double take_profit_step = 0.01;
-  double stop_loss_min = 0.0;
-  double stop_loss_max = 0.0;
-  double stop_loss_step = 0.01;
-  double trailing_stop_min = 0.0;
-  double trailing_stop_max = 0.0;
-  double trailing_stop_step = 0.01;
-  int regime_weak_exit_min = 0;
-  int regime_weak_exit_max = 0;
-  int allow_short_min = 0;
-  int allow_short_max = 0;
-  int volatility_lookback_min = 0;
-  int volatility_lookback_max = 0;
-  int volatility_lookback_step = 1;
-  double target_volatility_min = 0.0;
-  double target_volatility_max = 0.0;
-  double target_volatility_step = 0.01;
-  double max_position_pct_min = 1.0;
-  double max_position_pct_max = 1.0;
-  double max_position_pct_step = 0.25;
-  double grid_sample_pct = 1.0;
-  unsigned int grid_sample_seed = 42;
-  int grid_random_samples = 0;
 };
 
 }  // namespace metis

@@ -42,7 +42,7 @@ void print_discrete_grid_options() {
   std::cout << "  --trailing-stop-step <value>  Trailing stop sweep step (default: 0.01)\n";
   std::cout << "  --grid-sample-pct <value> Random fraction of full grid to evaluate, 0-1 (default: 1)\n";
   std::cout << "  --grid-sample-seed <n> Deterministic random seed for sampled grids (default: 42)\n";
-  std::cout << "  --grid-random-samples <n> Draw n random regime parameter sets directly; 0 uses grid loops (default: 0)\n";
+  std::cout << "  --grid-random-samples <n> Draw n random regime parameter sets directly; required and > 0 for regime (default: 0)\n";
 }
 
 void print_regime_options() {

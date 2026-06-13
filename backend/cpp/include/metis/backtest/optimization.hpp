@@ -8,10 +8,9 @@
 
 namespace metis {
 
-std::vector<SimulationResult> run_grid_search(
+std::vector<SimulationResult> run_search(
     const std::vector<Candle>& prices,
-    const GridSearchConfig& config,
-    StrategyType strategy,
+    const DiscreteGridRunConfig& config,
     const ExecutionConfig& execution);
 
 }  // namespace metis
