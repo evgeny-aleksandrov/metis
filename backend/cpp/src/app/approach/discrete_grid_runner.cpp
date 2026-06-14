@@ -1,6 +1,7 @@
 #include "metis/app/approach/discrete_grid_runner.hpp"
 
 #include "metis/backtest/simulation.hpp"
+#include "metis/backtest/simulation_rules.hpp"
 #include "metis/backtest/walk_forward.hpp"
 #include "metis/optimization/discrete_grid_search.hpp"
 #include "metis/strategy/strategy.hpp"
@@ -16,8 +17,10 @@ public:
       const WalkForwardWindow& window,
       const StrategyParams& selected_params,
       const ExecutionConfig& execution) const override {
-    const DiscreteStrategy selected_strategy(selected_params);
-    return run_simulation(window.training_prices, selected_strategy, execution);
+    const DiscreteGridStrategyParams params = std::get<DiscreteGridStrategyParams>(selected_params);
+    const DiscreteStrategy selected_strategy(params);
+    const SimulationRules rules = simulation_rules_from(params);
+    return run_simulation(window.training_prices, selected_strategy, rules, execution);
   }
 
   SimulationResult run_test(
@@ -25,10 +28,13 @@ public:
       const StrategyParams& selected_params,
       double current_equity,
       const ExecutionConfig& execution) const override {
-    const DiscreteStrategy selected_strategy(selected_params);
+    const DiscreteGridStrategyParams params = std::get<DiscreteGridStrategyParams>(selected_params);
+    const DiscreteStrategy selected_strategy(params);
+    const SimulationRules rules = simulation_rules_from(params);
     return run_simulation(
         window.test_prices,
         selected_strategy,
+        rules,
         current_equity,
         execution.costs,
         execution.annualization);

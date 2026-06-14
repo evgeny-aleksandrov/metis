@@ -28,6 +28,8 @@ else
     "$repo_root/backend/cpp/src/backtest/buy_and_hold_simulation.cpp" \
     "$repo_root/backend/cpp/src/backtest/execution_accounting.cpp" \
     "$repo_root/backend/cpp/src/backtest/simulation.cpp" \
+    "$repo_root/backend/cpp/src/backtest/simulation_rules.cpp" \
+    "$repo_root/backend/cpp/src/backtest/trade_exit_policy.cpp" \
     "$repo_root/backend/cpp/src/backtest/training_candidate_selector.cpp" \
     "$repo_root/backend/cpp/src/backtest/walk_forward.cpp" \
     "$repo_root/backend/cpp/src/backtest/walk_forward_splitter.cpp" \

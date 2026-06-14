@@ -2,6 +2,7 @@
 
 #include "metis/types.hpp"
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -31,7 +32,6 @@ public:
   virtual std::string name() const = 0;
   virtual const StrategyParams& params() const = 0;
   virtual int required_lookback() const = 0;
-  virtual bool uses_timed_exit() const = 0;
   virtual bool should_exit_on_signal_weakness(
       const std::vector<Candle>& prices,
       size_t index,
@@ -44,12 +44,11 @@ public:
 
 class DiscreteStrategy final : public Strategy {
 public:
-  explicit DiscreteStrategy(StrategyParams params);
+  explicit DiscreteStrategy(DiscreteGridStrategyParams discrete_params);
 
   std::string name() const override;
   const StrategyParams& params() const override;
   int required_lookback() const override;
-  bool uses_timed_exit() const override;
   bool should_exit_on_signal_weakness(
       const std::vector<Candle>& prices,
       size_t index,

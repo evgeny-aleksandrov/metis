@@ -1,6 +1,7 @@
 #include "metis/optimization/discrete_grid_search.hpp"
 
 #include "metis/backtest/simulation.hpp"
+#include "metis/backtest/simulation_rules.hpp"
 #include "metis/strategy/strategy.hpp"
 
 #include <cstddef>
@@ -110,7 +111,7 @@ std::vector<SimulationResult> run_regime_random_search(
       continue;
     }
 
-    StrategyParams params;
+    DiscreteGridStrategyParams params;
     params.strategy = run_config.strategy;
     params.lookback_days = y;
     params.fast_lookback_days = fast_lookback;
@@ -125,13 +126,14 @@ std::vector<SimulationResult> run_regime_random_search(
     params.target_volatility = sampler.pick_double(target_volatility_values);
     params.max_position_pct = sampler.pick_double(max_position_values);
 
-    const DiscreteStrategy candidate(params);
-    results.push_back(run_simulation(prices, candidate, execution));
+    const DiscreteStrategy strategy_candidate(params);
+    const SimulationRules rules = simulation_rules_from(params);
+    results.push_back(run_simulation(prices, strategy_candidate, rules, execution));
   }
   return results;
 }
 
-std::vector<SimulationResult> run_threshold_grid_search(
+std::vector<SimulationResult> run_threshold_strategy_grid_search(
     const std::vector<Candle>& prices,
     const DiscreteGridRunConfig& run_config,
     const ExecutionConfig& execution,
@@ -144,7 +146,7 @@ std::vector<SimulationResult> run_threshold_grid_search(
         for (double take_profit = search_space.take_profit_pct.min; take_profit <= search_space.take_profit_pct.max + 1e-9; take_profit += search_space.take_profit_pct.step) {
           for (double stop_loss = search_space.stop_loss_pct.min; stop_loss <= search_space.stop_loss_pct.max + 1e-9; stop_loss += search_space.stop_loss_pct.step) {
             for (double trailing_stop = search_space.trailing_stop_pct.min; trailing_stop <= search_space.trailing_stop_pct.max + 1e-9; trailing_stop += search_space.trailing_stop_pct.step) {
-              StrategyParams params;
+              DiscreteGridStrategyParams params;
               params.strategy = run_config.strategy;
               params.diff_pct = x;
               params.lookback_days = y;
@@ -155,7 +157,8 @@ std::vector<SimulationResult> run_threshold_grid_search(
 
               if (sampler.should_evaluate_candidate()) {
                 const DiscreteStrategy candidate(params);
-                results.push_back(run_simulation(prices, candidate, execution));
+                const SimulationRules rules = simulation_rules_from(params);
+                results.push_back(run_simulation(prices, candidate, rules, execution));
               }
             }
           }
@@ -184,7 +187,7 @@ std::vector<SimulationResult> run_search(
   if (run_config.strategy == DiscreteGridStrategy::Regime) {
     return run_regime_random_search(prices, run_config, execution, sampler);
   }
-  return run_threshold_grid_search(prices, run_config, execution, sampler);
+  return run_threshold_strategy_grid_search(prices, run_config, execution, sampler);
 }
 
 }  // namespace metis

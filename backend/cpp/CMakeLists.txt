@@ -17,6 +17,8 @@ add_executable(metis_backtester
   src/backtest/buy_and_hold_simulation.cpp
   src/backtest/execution_accounting.cpp
   src/backtest/simulation.cpp
+  src/backtest/simulation_rules.cpp
+  src/backtest/trade_exit_policy.cpp
   src/backtest/training_candidate_selector.cpp
   src/backtest/walk_forward.cpp
   src/backtest/walk_forward_splitter.cpp

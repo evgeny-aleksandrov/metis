@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace metis {
@@ -16,7 +17,7 @@ enum class DiscreteGridStrategy {
   Regime
 };
 
-struct StrategyParams {
+struct DiscreteGridStrategyParams {
   DiscreteGridStrategy strategy = DiscreteGridStrategy::Drop;
   double diff_pct = 0.03;
   int lookback_days = 5;
@@ -33,6 +34,15 @@ struct StrategyParams {
   double target_volatility = 0.0;
   double max_position_pct = 1.0;
 };
+
+struct RidgeStrategyParams {
+  double alpha = 1.0;
+  int feature_lookback_days = 1;
+  int target_horizon_days = 1;
+  double signal_threshold = 0.0;
+};
+
+using StrategyParams = std::variant<DiscreteGridStrategyParams, RidgeStrategyParams>;
 
 struct Annualization {
   double bars_per_year = 252.0;

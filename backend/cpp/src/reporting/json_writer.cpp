@@ -12,22 +12,23 @@ namespace metis {
 namespace {
 
 void write_result_json(std::ostringstream& out, const SimulationResult& item, const std::string& indent) {
+  const DiscreteGridStrategyParams& params = std::get<DiscreteGridStrategyParams>(item.params);
   out << indent << "{\n";
-  out << indent << "  \"strategy\": \"" << discrete_grid_strategy_to_string(item.params.strategy) << "\",\n";
-  out << indent << "  \"diff_pct\": " << item.params.diff_pct << ",\n";
-  out << indent << "  \"lookback_days\": " << item.params.lookback_days << ",\n";
-  out << indent << "  \"fast_lookback_days\": " << item.params.fast_lookback_days << ",\n";
-  out << indent << "  \"short_lookback_days\": " << item.params.short_lookback_days << ",\n";
-  out << indent << "  \"short_fast_lookback_days\": " << item.params.short_fast_lookback_days << ",\n";
-  out << indent << "  \"hold_days\": " << item.params.hold_days << ",\n";
-  out << indent << "  \"take_profit_pct\": " << item.params.take_profit_pct << ",\n";
-  out << indent << "  \"stop_loss_pct\": " << item.params.stop_loss_pct << ",\n";
-  out << indent << "  \"trailing_stop_pct\": " << item.params.trailing_stop_pct << ",\n";
-  out << indent << "  \"exit_on_regime_weakness\": " << (item.params.exit_on_regime_weakness ? "true" : "false") << ",\n";
-  out << indent << "  \"allow_short\": " << (item.params.allow_short ? "true" : "false") << ",\n";
-  out << indent << "  \"volatility_lookback_days\": " << item.params.volatility_lookback_days << ",\n";
-  out << indent << "  \"target_volatility\": " << item.params.target_volatility << ",\n";
-  out << indent << "  \"max_position_pct\": " << item.params.max_position_pct << ",\n";
+  out << indent << "  \"strategy\": \"" << discrete_grid_strategy_to_string(params.strategy) << "\",\n";
+  out << indent << "  \"diff_pct\": " << params.diff_pct << ",\n";
+  out << indent << "  \"lookback_days\": " << params.lookback_days << ",\n";
+  out << indent << "  \"fast_lookback_days\": " << params.fast_lookback_days << ",\n";
+  out << indent << "  \"short_lookback_days\": " << params.short_lookback_days << ",\n";
+  out << indent << "  \"short_fast_lookback_days\": " << params.short_fast_lookback_days << ",\n";
+  out << indent << "  \"hold_days\": " << params.hold_days << ",\n";
+  out << indent << "  \"take_profit_pct\": " << params.take_profit_pct << ",\n";
+  out << indent << "  \"stop_loss_pct\": " << params.stop_loss_pct << ",\n";
+  out << indent << "  \"trailing_stop_pct\": " << params.trailing_stop_pct << ",\n";
+  out << indent << "  \"exit_on_regime_weakness\": " << (params.exit_on_regime_weakness ? "true" : "false") << ",\n";
+  out << indent << "  \"allow_short\": " << (params.allow_short ? "true" : "false") << ",\n";
+  out << indent << "  \"volatility_lookback_days\": " << params.volatility_lookback_days << ",\n";
+  out << indent << "  \"target_volatility\": " << params.target_volatility << ",\n";
+  out << indent << "  \"max_position_pct\": " << params.max_position_pct << ",\n";
   out << indent << "  \"final_equity\": " << item.final_equity << ",\n";
   out << indent << "  \"total_return\": " << item.metrics.total_return << ",\n";
   out << indent << "  \"cagr\": " << item.metrics.cagr << ",\n";

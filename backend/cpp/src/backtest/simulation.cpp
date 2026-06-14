@@ -2,9 +2,11 @@
 
 #include "metis/backtest/execution_accounting.hpp"
 #include "metis/backtest/metrics.hpp"
+#include "metis/backtest/trade_exit_policy.hpp"
 #include "metis/strategy/strategy.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -13,6 +15,7 @@ namespace metis {
 SimulationResult run_simulation(
     const std::vector<Candle>& prices,
     const Strategy& strategy,
+    const SimulationRules& rules,
     double initial_equity,
     const TransactionCosts& costs,
     const Annualization& annualization) {
@@ -22,28 +25,20 @@ SimulationResult run_simulation(
   result.final_equity = initial_equity;
 
   int required_lookback = strategy.required_lookback();
-  if (params.volatility_lookback_days > 0) {
-    required_lookback = std::max(required_lookback, params.volatility_lookback_days);
+  if (rules.sizing.volatility_lookback_days > 0) {
+    required_lookback = std::max(required_lookback, rules.sizing.volatility_lookback_days);
   }
   if (prices.size() < static_cast<size_t>(required_lookback + 2)) {
     return result;
   }
 
   double cash = initial_equity;
-  double shares = 0.0;
-  double entry_value = 0.0;
-  double entry_price = 0.0;
   double entry_cost = 0.0;
-  double entry_signal_quality = 0.0;
-  double highest_price_since_entry = 0.0;
-  double lowest_price_since_entry = 0.0;
-  std::string entry_date;
-  int position_direction = 0;
-  int days_left = 0;
-  int held_days = 0;
   int wins = 0;
   int trades = 0;
-  bool trailing_stop_active = false;
+  OpenPosition position;
+  std::unique_ptr<TradeExitPolicy> exit_policy =
+      create_trade_exit_policy(rules.trade_management, strategy);
 
   std::vector<double> equity_curve;
   equity_curve.reserve(prices.size());
@@ -52,64 +47,41 @@ SimulationResult run_simulation(
   for (size_t index = 0; index < prices.size(); ++index) {
     const double close = prices[index].close;
 
-    if (shares > 0.0) {
-      days_left -= 1;
-      held_days += 1;
-      if (close > highest_price_since_entry) {
-        highest_price_since_entry = close;
-      }
-      if (lowest_price_since_entry <= 0.0 || close < lowest_price_since_entry) {
-        lowest_price_since_entry = close;
-      }
-      const double trade_return =
-          entry_price > 0.0 ? (static_cast<double>(position_direction) * ((close / entry_price) - 1.0)) : 0.0;
-      if (params.take_profit_pct > 0.0 && trade_return >= params.take_profit_pct) {
-        trailing_stop_active = true;
-      }
-      const bool take_profit_exit =
-          params.take_profit_pct > 0.0 && trade_return >= params.take_profit_pct && params.trailing_stop_pct <= 0.0;
-      const bool trailing_stop_exit =
-          trailing_stop_active && params.trailing_stop_pct > 0.0 &&
-          ((position_direction > 0 && highest_price_since_entry > 0.0 &&
-            close <= highest_price_since_entry * (1.0 - params.trailing_stop_pct)) ||
-           (position_direction < 0 && lowest_price_since_entry > 0.0 &&
-            close >= lowest_price_since_entry * (1.0 + params.trailing_stop_pct)));
-      const bool stop_loss_exit = params.stop_loss_pct > 0.0 && trade_return <= -params.stop_loss_pct;
-      const bool timed_exit = strategy.uses_timed_exit() && days_left <= 0;
-      const bool regime_weakness_exit = strategy.should_exit_on_signal_weakness(prices, index, position_direction);
-      if (timed_exit || take_profit_exit || trailing_stop_exit || stop_loss_exit || regime_weakness_exit) {
-        const double exit_value = shares * close;
+    if (position.is_open()) {
+      position.held_days += 1;
+      const ExitDecision exit = exit_policy->evaluate(prices, index, position);
+      if (exit.should_exit) {
+        const double exit_value = position.shares * close;
         const double exit_cost = order_cost(exit_value, costs);
-        if (position_direction > 0) {
+        if (position.direction > 0) {
           cash += std::max(0.0, exit_value - exit_cost);
         } else {
           cash -= exit_value + exit_cost;
         }
-        const double pnl = cash - entry_value;
+        const double pnl = cash - position.entry_value;
         if (pnl > 0.0) {
           wins += 1;
         }
         Trade trade;
-        trade.entry_date = entry_date;
+        trade.entry_date = position.entry_date;
         trade.exit_date = prices[index].date;
-        trade.direction = position_direction > 0 ? "long" : "short";
-        trade.entry_price = entry_price;
+        trade.direction = position.direction > 0 ? "long" : "short";
+        trade.entry_price = position.entry_price;
         trade.exit_price = close;
-        trade.shares = shares;
+        trade.shares = position.shares;
         trade.pnl = pnl;
         trade.costs = entry_cost + exit_cost;
-        trade.entry_signal_quality = entry_signal_quality;
-        trade.holding_days = held_days;
+        trade.entry_signal_quality = position.entry_signal_quality;
+        trade.holding_days = position.held_days;
         result.trades.push_back(trade);
-        shares = 0.0;
-        position_direction = 0;
+        position = {};
       }
     }
 
     const bool has_lookback = index >= static_cast<size_t>(required_lookback);
-    if (shares == 0.0 && has_lookback) {
+    if (!position.is_open() && has_lookback) {
       int entry_direction = 0;
-      const PortfolioState state{cash, position_direction};
+      const PortfolioState state{cash, position.direction};
       const Signal signal = strategy.signal(prices, index, state);
       const bool should_enter = signal.direction == Direction::Long || signal.direction == Direction::Short;
       if (signal.direction == Direction::Long) {
@@ -117,65 +89,68 @@ SimulationResult run_simulation(
       } else if (signal.direction == Direction::Short) {
         entry_direction = -1;
       }
-      entry_signal_quality = signal.confidence;
       if (should_enter) {
         const double equity = cash;
-        const double fraction = position_fraction(prices, index, params, annualization);
+        const double fraction = position_fraction(
+            prices,
+            index,
+            rules.sizing.max_position_pct,
+            rules.sizing.target_volatility,
+            rules.sizing.volatility_lookback_days,
+            annualization);
         const double target_notional = equity * std::max(0.0, fraction);
         const double entry_cost_budget = std::min(cash, target_notional) - costs.fixed_per_order;
         const double denominator = close * (1.0 + std::max(0.0, costs.variable_rate));
         if (entry_cost_budget <= 0.0 || denominator <= 0.0) {
           continue;
         }
-        shares = entry_cost_budget / denominator;
-        const double entry_trade_value = shares * close;
-        entry_value = equity;
-        entry_price = close;
+        position.shares = entry_cost_budget / denominator;
+        const double entry_trade_value = position.shares * close;
+        position.entry_value = equity;
+        position.entry_price = close;
         entry_cost = order_cost(entry_trade_value, costs);
-        highest_price_since_entry = close;
-        lowest_price_since_entry = close;
-        entry_date = prices[index].date;
-        position_direction = entry_direction;
-        if (position_direction > 0) {
+        position.entry_date = prices[index].date;
+        position.direction = entry_direction;
+        position.entry_signal_quality = signal.confidence;
+        if (position.direction > 0) {
           cash -= entry_trade_value + entry_cost;
         } else {
           cash += entry_trade_value - entry_cost;
         }
-        days_left = params.hold_days;
-        held_days = 0;
-        trailing_stop_active = false;
+        position.held_days = 0;
+        exit_policy->on_entry(position);
         trades += 1;
       }
     }
 
-    const double equity = cash + static_cast<double>(position_direction) * shares * close;
+    const double equity = cash + static_cast<double>(position.direction) * position.shares * close;
     equity_curve.push_back(equity);
     result.equity_curve.push_back({prices[index].date, equity});
   }
 
-  if (shares > 0.0) {
-    const double final_value = shares * prices.back().close;
+  if (position.is_open()) {
+    const double final_value = position.shares * prices.back().close;
     const double final_cost = order_cost(final_value, costs);
-    if (position_direction > 0) {
+    if (position.direction > 0) {
       cash += std::max(0.0, final_value - final_cost);
     } else {
       cash -= final_value + final_cost;
     }
-    const double pnl = cash - entry_value;
+    const double pnl = cash - position.entry_value;
     if (pnl > 0.0) {
       wins += 1;
     }
     Trade trade;
-    trade.entry_date = entry_date;
+    trade.entry_date = position.entry_date;
     trade.exit_date = prices.back().date;
-    trade.direction = position_direction > 0 ? "long" : "short";
-    trade.entry_price = entry_price;
+    trade.direction = position.direction > 0 ? "long" : "short";
+    trade.entry_price = position.entry_price;
     trade.exit_price = prices.back().close;
-    trade.shares = shares;
+    trade.shares = position.shares;
     trade.pnl = pnl;
     trade.costs = entry_cost + final_cost;
-    trade.entry_signal_quality = entry_signal_quality;
-    trade.holding_days = held_days;
+    trade.entry_signal_quality = position.entry_signal_quality;
+    trade.holding_days = position.held_days;
     result.trades.push_back(trade);
     result.final_equity = cash;
   } else {
@@ -196,8 +171,9 @@ SimulationResult run_simulation(
 SimulationResult run_simulation(
     const std::vector<Candle>& prices,
     const Strategy& strategy,
+    const SimulationRules& rules,
     const ExecutionConfig& execution) {
-  return run_simulation(prices, strategy, execution.initial_equity, execution.costs, execution.annualization);
+  return run_simulation(prices, strategy, rules, execution.initial_equity, execution.costs, execution.annualization);
 }
 
 }  // namespace metis
