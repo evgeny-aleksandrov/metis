@@ -127,7 +127,7 @@ std::vector<SimulationResult> run_regime_random_search(
     params.max_position_pct = sampler.pick_double(max_position_values);
 
     const DiscreteStrategy strategy_candidate(params);
-    const SimulationRules rules = simulation_rules_from(params);
+    const SimulationRules rules = simulation_rules_from(params, strategy_candidate);
     results.push_back(run_simulation(prices, strategy_candidate, rules, execution));
   }
   return results;
@@ -157,7 +157,7 @@ std::vector<SimulationResult> run_threshold_strategy_grid_search(
 
               if (sampler.should_evaluate_candidate()) {
                 const DiscreteStrategy candidate(params);
-                const SimulationRules rules = simulation_rules_from(params);
+                const SimulationRules rules = simulation_rules_from(params, candidate);
                 results.push_back(run_simulation(prices, candidate, rules, execution));
               }
             }

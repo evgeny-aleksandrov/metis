@@ -16,6 +16,7 @@ add_executable(metis_backtester
   src/backtest/metrics.cpp
   src/backtest/buy_and_hold_simulation.cpp
   src/backtest/execution_accounting.cpp
+  src/backtest/position_sizing_policy.cpp
   src/backtest/simulation.cpp
   src/backtest/simulation_rules.cpp
   src/backtest/trade_exit_policy.cpp

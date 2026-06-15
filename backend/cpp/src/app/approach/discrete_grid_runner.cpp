@@ -19,7 +19,7 @@ public:
       const ExecutionConfig& execution) const override {
     const DiscreteGridStrategyParams params = std::get<DiscreteGridStrategyParams>(selected_params);
     const DiscreteStrategy selected_strategy(params);
-    const SimulationRules rules = simulation_rules_from(params);
+    const SimulationRules rules = simulation_rules_from(params, selected_strategy);
     return run_simulation(window.training_prices, selected_strategy, rules, execution);
   }
 
@@ -30,7 +30,7 @@ public:
       const ExecutionConfig& execution) const override {
     const DiscreteGridStrategyParams params = std::get<DiscreteGridStrategyParams>(selected_params);
     const DiscreteStrategy selected_strategy(params);
-    const SimulationRules rules = simulation_rules_from(params);
+    const SimulationRules rules = simulation_rules_from(params, selected_strategy);
     return run_simulation(
         window.test_prices,
         selected_strategy,

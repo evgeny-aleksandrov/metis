@@ -24,10 +24,15 @@ SimulationResult run_simulation(
   result.params = params;
   result.final_equity = initial_equity;
 
-  int required_lookback = strategy.required_lookback();
-  if (rules.sizing.volatility_lookback_days > 0) {
-    required_lookback = std::max(required_lookback, rules.sizing.volatility_lookback_days);
+  if (!rules.sizing_policy) {
+    throw std::runtime_error("SimulationRules must include a position sizing policy.");
   }
+  if (!rules.exit_policy) {
+    throw std::runtime_error("SimulationRules must include a trade exit policy.");
+  }
+
+  int required_lookback = strategy.required_lookback();
+  required_lookback = std::max(required_lookback, rules.sizing_policy->required_lookback());
   if (prices.size() < static_cast<size_t>(required_lookback + 2)) {
     return result;
   }
@@ -37,8 +42,6 @@ SimulationResult run_simulation(
   int wins = 0;
   int trades = 0;
   OpenPosition position;
-  std::unique_ptr<TradeExitPolicy> exit_policy =
-      create_trade_exit_policy(rules.trade_management, strategy);
 
   std::vector<double> equity_curve;
   equity_curve.reserve(prices.size());
@@ -49,7 +52,7 @@ SimulationResult run_simulation(
 
     if (position.is_open()) {
       position.held_days += 1;
-      const ExitDecision exit = exit_policy->evaluate(prices, index, position);
+      const ExitDecision exit = rules.exit_policy->evaluate(prices, index, position);
       if (exit.should_exit) {
         const double exit_value = position.shares * close;
         const double exit_cost = order_cost(exit_value, costs);
@@ -91,12 +94,10 @@ SimulationResult run_simulation(
       }
       if (should_enter) {
         const double equity = cash;
-        const double fraction = position_fraction(
+        const double fraction = rules.sizing_policy->target_fraction(
             prices,
             index,
-            rules.sizing.max_position_pct,
-            rules.sizing.target_volatility,
-            rules.sizing.volatility_lookback_days,
+            equity,
             annualization);
         const double target_notional = equity * std::max(0.0, fraction);
         const double entry_cost_budget = std::min(cash, target_notional) - costs.fixed_per_order;
@@ -118,7 +119,7 @@ SimulationResult run_simulation(
           cash += entry_trade_value - entry_cost;
         }
         position.held_days = 0;
-        exit_policy->on_entry(position);
+        rules.exit_policy->on_entry(position);
         trades += 1;
       }
     }

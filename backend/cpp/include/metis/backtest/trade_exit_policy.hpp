@@ -1,6 +1,5 @@
 #pragma once
 
-#include "metis/backtest/simulation_rules.hpp"
 #include "metis/strategy/strategy.hpp"
 #include "metis/types.hpp"
 
@@ -129,9 +128,5 @@ public:
 private:
   std::vector<std::unique_ptr<TradeExitPolicy>> policies_;
 };
-
-std::unique_ptr<TradeExitPolicy> create_trade_exit_policy(
-    const TradeManagementRules& rules,
-    const Strategy& strategy);
 
 }  // namespace metis
