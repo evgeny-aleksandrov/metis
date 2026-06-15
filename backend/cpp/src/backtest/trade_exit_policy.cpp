@@ -125,28 +125,4 @@ ExitDecision CompositeExitPolicy::evaluate(
   return {};
 }
 
-std::unique_ptr<TradeExitPolicy> create_trade_exit_policy(
-    const TradeManagementRules& rules,
-    const Strategy& strategy) {
-  auto policy = std::make_unique<CompositeExitPolicy>();
-  if (rules.use_timed_exit && rules.hold_days > 0) {
-    policy->add(std::make_unique<HoldPeriodExitPolicy>(rules.hold_days));
-  }
-  if (rules.take_profit_pct > 0.0 && rules.trailing_stop_pct <= 0.0) {
-    policy->add(std::make_unique<TakeProfitExitPolicy>(rules.take_profit_pct));
-  }
-  if (rules.stop_loss_pct > 0.0) {
-    policy->add(std::make_unique<StopLossExitPolicy>(rules.stop_loss_pct));
-  }
-  if (rules.trailing_stop_pct > 0.0) {
-    policy->add(std::make_unique<TrailingStopExitPolicy>(
-        rules.trailing_stop_pct,
-        rules.take_profit_pct));
-  }
-  if (rules.use_signal_weakness_exit) {
-    policy->add(std::make_unique<SignalWeaknessExitPolicy>(strategy));
-  }
-  return policy;
-}
-
 }  // namespace metis

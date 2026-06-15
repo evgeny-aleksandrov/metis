@@ -1,30 +1,24 @@
 #pragma once
 
+#include "metis/backtest/position_sizing_policy.hpp"
+#include "metis/backtest/trade_exit_policy.hpp"
+#include "metis/strategy/strategy.hpp"
 #include "metis/types.hpp"
+
+#include <memory>
 
 namespace metis {
 
-struct PositionSizingRules {
-  double max_position_pct = 1.0;
-  double target_volatility = 0.0;
-  int volatility_lookback_days = 0;
-};
-
-struct TradeManagementRules {
-  int hold_days = 0;
-  double take_profit_pct = 0.0;
-  double stop_loss_pct = 0.0;
-  double trailing_stop_pct = 0.0;
-  bool use_timed_exit = false;
-  bool use_signal_weakness_exit = false;
-};
-
 struct SimulationRules {
-  PositionSizingRules sizing;
-  TradeManagementRules trade_management;
+  std::unique_ptr<PositionSizingPolicy> sizing_policy;
+  std::unique_ptr<TradeExitPolicy> exit_policy;
 };
 
-SimulationRules simulation_rules_from(const DiscreteGridStrategyParams& params);
-SimulationRules simulation_rules_from(const StrategyParams& params);
+SimulationRules simulation_rules_from(
+    const DiscreteGridStrategyParams& params,
+    const Strategy& strategy);
+SimulationRules simulation_rules_from(
+    const StrategyParams& params,
+    const Strategy& strategy);
 
 }  // namespace metis
