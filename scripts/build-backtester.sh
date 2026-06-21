@@ -3,12 +3,13 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
+build_dir="${METIS_BUILD_DIR:-$repo_root/build}"
 
 if command -v cmake >/dev/null 2>&1; then
-  cmake -S "$repo_root/backend/cpp" -B "$repo_root/build" -DCMAKE_BUILD_TYPE=Release
-  cmake --build "$repo_root/build" --target metis_backtester
+  cmake -S "$repo_root/backend/cpp" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release
+  cmake --build "$build_dir" --target metis_backtester
 else
-  mkdir -p "$repo_root/build"
+  mkdir -p "$build_dir"
   compiler="clang++"
   if command -v xcrun >/dev/null 2>&1; then
     compiler="xcrun clang++"
@@ -52,5 +53,5 @@ else
     "$repo_root/backend/cpp/src/reporting/training_results_writer.cpp" \
     "$repo_root/backend/cpp/src/strategy/strategy.cpp" \
     "$repo_root/backend/cpp/src/strategy/strategy_type.cpp" \
-    -o "$repo_root/build/metis_backtester"
+    -o "$build_dir/metis_backtester"
 fi

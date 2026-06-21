@@ -5,7 +5,7 @@
       "name": "C++ Backtester: Drop",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/metis_backtester",
+      "program": "${workspaceFolder}/build-debug/metis_backtester",
       "args": [
         "--symbol",
         "QQQ",
@@ -50,7 +50,7 @@
       "name": "C++ Backtester: Gain",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/metis_backtester",
+      "program": "${workspaceFolder}/build-debug/metis_backtester",
       "args": [
         "--symbol",
         "QQQ",
@@ -89,7 +89,7 @@
       "name": "C++ Backtester: Regime Full Feature Debug",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/metis_backtester",
+      "program": "${workspaceFolder}/build-debug/metis_backtester",
       "args": [
         "--symbol",
         "QQQ",
