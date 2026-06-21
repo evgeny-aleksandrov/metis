@@ -18,7 +18,6 @@ add_executable(metis_backtester
   src/backtest/execution_accounting.cpp
   src/backtest/position_sizing_policy.cpp
   src/backtest/simulation.cpp
-  src/backtest/simulation_rules.cpp
   src/backtest/trade_exit_policy.cpp
   src/backtest/training_candidate_selector.cpp
   src/backtest/walk_forward.cpp
@@ -39,8 +38,15 @@ add_executable(metis_backtester
   src/reporting/console_summary.cpp
   src/reporting/json_writer.cpp
   src/reporting/training_results_writer.cpp
-  src/strategy/strategy.cpp
+  src/strategy/regime_strategy.cpp
+  src/strategy/regime_strategy_rules.cpp
+  src/strategy/ridge_strategy.cpp
+  src/strategy/ridge_strategy_rules.cpp
+  src/strategy/strategy_factory.cpp
+  src/strategy/strategy_rules_factory.cpp
   src/strategy/strategy_type.cpp
+  src/strategy/threshold_strategy.cpp
+  src/strategy/threshold_strategy_rules.cpp
 )
 
 target_include_directories(metis_backtester PRIVATE include)

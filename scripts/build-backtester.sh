@@ -30,7 +30,6 @@ else
     "$repo_root/backend/cpp/src/backtest/execution_accounting.cpp" \
     "$repo_root/backend/cpp/src/backtest/position_sizing_policy.cpp" \
     "$repo_root/backend/cpp/src/backtest/simulation.cpp" \
-    "$repo_root/backend/cpp/src/backtest/simulation_rules.cpp" \
     "$repo_root/backend/cpp/src/backtest/trade_exit_policy.cpp" \
     "$repo_root/backend/cpp/src/backtest/training_candidate_selector.cpp" \
     "$repo_root/backend/cpp/src/backtest/walk_forward.cpp" \
@@ -51,7 +50,14 @@ else
     "$repo_root/backend/cpp/src/reporting/console_summary.cpp" \
     "$repo_root/backend/cpp/src/reporting/json_writer.cpp" \
     "$repo_root/backend/cpp/src/reporting/training_results_writer.cpp" \
-    "$repo_root/backend/cpp/src/strategy/strategy.cpp" \
+    "$repo_root/backend/cpp/src/strategy/regime_strategy.cpp" \
+    "$repo_root/backend/cpp/src/strategy/regime_strategy_rules.cpp" \
+    "$repo_root/backend/cpp/src/strategy/ridge_strategy.cpp" \
+    "$repo_root/backend/cpp/src/strategy/ridge_strategy_rules.cpp" \
+    "$repo_root/backend/cpp/src/strategy/strategy_factory.cpp" \
+    "$repo_root/backend/cpp/src/strategy/strategy_rules_factory.cpp" \
     "$repo_root/backend/cpp/src/strategy/strategy_type.cpp" \
+    "$repo_root/backend/cpp/src/strategy/threshold_strategy.cpp" \
+    "$repo_root/backend/cpp/src/strategy/threshold_strategy_rules.cpp" \
     -o "$build_dir/metis_backtester"
 fi

@@ -20,11 +20,6 @@ struct Signal {
   double confidence = 0.0;
 };
 
-struct PortfolioState {
-  double equity = 0.0;
-  int position_direction = 0;
-};
-
 class Strategy {
 public:
   virtual ~Strategy() = default;
@@ -38,28 +33,7 @@ public:
       int position_direction) const = 0;
   virtual Signal signal(
       const std::vector<Candle>& prices,
-      size_t index,
-      const PortfolioState& state) const = 0;
-};
-
-class DiscreteStrategy final : public Strategy {
-public:
-  explicit DiscreteStrategy(DiscreteGridStrategyParams discrete_params);
-
-  std::string name() const override;
-  const StrategyParams& params() const override;
-  int required_lookback() const override;
-  bool should_exit_on_signal_weakness(
-      const std::vector<Candle>& prices,
-      size_t index,
-      int position_direction) const override;
-  Signal signal(
-      const std::vector<Candle>& prices,
-      size_t index,
-      const PortfolioState& state) const override;
-
-private:
-  StrategyParams params_;
+      size_t index) const = 0;
 };
 
 }  // namespace metis

@@ -1,10 +1,11 @@
 #include "metis/optimization/discrete_grid_search.hpp"
 
 #include "metis/backtest/simulation.hpp"
-#include "metis/backtest/simulation_rules.hpp"
-#include "metis/strategy/strategy.hpp"
+#include "metis/strategy/strategy_factory.hpp"
+#include "metis/strategy/strategy_rules_factory.hpp"
 
 #include <cstddef>
+#include <memory>
 #include <random>
 #include <stdexcept>
 
@@ -126,9 +127,9 @@ std::vector<SimulationResult> run_regime_random_search(
     params.target_volatility = sampler.pick_double(target_volatility_values);
     params.max_position_pct = sampler.pick_double(max_position_values);
 
-    const DiscreteStrategy strategy_candidate(params);
-    const SimulationRules rules = simulation_rules_from(params, strategy_candidate);
-    results.push_back(run_simulation(prices, strategy_candidate, rules, execution));
+    const std::unique_ptr<Strategy> strategy_candidate = make_strategy(params);
+    const SimulationRules rules = make_strategy_rules(params, *strategy_candidate);
+    results.push_back(run_simulation(prices, *strategy_candidate, rules, execution));
   }
   return results;
 }
@@ -156,9 +157,9 @@ std::vector<SimulationResult> run_threshold_strategy_grid_search(
               params.trailing_stop_pct = trailing_stop;
 
               if (sampler.should_evaluate_candidate()) {
-                const DiscreteStrategy candidate(params);
-                const SimulationRules rules = simulation_rules_from(params, candidate);
-                results.push_back(run_simulation(prices, candidate, rules, execution));
+                const std::unique_ptr<Strategy> candidate = make_strategy(params);
+                const SimulationRules rules = make_strategy_rules(params, *candidate);
+                results.push_back(run_simulation(prices, *candidate, rules, execution));
               }
             }
           }
